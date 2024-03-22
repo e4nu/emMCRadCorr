@@ -10,13 +10,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(SOURCES
     src/PlottingUtils.cxx
     src/RadiativeCorrUtils.cxx
-    src/processor_skeleton.cxx
     src/radiate_flux.cxx
 )
 
 # Add executable target
 add_executable(radiate_flux ${SOURCES})
-add_executable(processor_skeleton ${SOURCES})
+add_executable(processor_skeleton src/processor_skeleton.cxx)
 
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})
@@ -24,7 +23,9 @@ target_link_libraries(radiate_flux PUBLIC ROOT::Physics)
 target_link_libraries(radiate_flux PUBLIC ROOT::Tree)
 target_link_libraries(radiate_flux PUBLIC ROOT::Hist)
 
-include(CPM.cmake/cmake/CPM.cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
+
+include(CPM)
 CPMAddPackage(
   NAME NuHepMC_CPPUtils
   GIT_TAG main

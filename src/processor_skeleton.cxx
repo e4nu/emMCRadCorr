@@ -13,7 +13,7 @@
 #include "HepMC3/GenParticle.h"
 #include "HepMC3/GenVertex.h"
 
-int main(int argc, char const *argv[]) {
+int main(int, char const *argv[]) {
 
   auto rdr = HepMC3::deduce_reader(argv[1]);
   if (!rdr) {
@@ -119,7 +119,9 @@ int main(int argc, char const *argv[]) {
     auto fslep = primary_leptons.back();
 
     auto Elep = fslep->momentum().e();
+    (void)Elep; //stop unused variable warning
     auto Q2 = -(beampt->momentum() - fslep->momentum()).m2();
+    (void)Q2;
 
     // calculate some modification to the lepton
     // as an example we drag the lepton by 10 MeV in the -q direction without
