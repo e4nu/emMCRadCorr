@@ -37,21 +37,3 @@ target_link_libraries(processor_skeleton PUBLIC NuHepMC::CPPUtils)
 
 #target_include_directories(radiate_flux PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
-#CPMAddPackage(
-#  NAME NuHepMC_CPPUtils
-#  GIT_TAG main
-#  GIT_REPOSITORY "https://github.com/NuHepMC/cpputils.git"
-#  OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
-#)
-
-# Include directories if needed
-#target_link_libraries(<mytarget> PUBLIC NuHepMC::CPPUtils)
-
-#target_include_directories(MyExecutable PUBLIC include)
-
-# Add libraries if needed
-# target_link_libraries(MyExecutable <library_name>)
-
-# Optionally, you can add compiler flags
-# target_compile_options(MyExecutable PRIVATE -Wall -Wextra -pedantic)
-
