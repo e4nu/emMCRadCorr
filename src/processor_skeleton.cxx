@@ -13,7 +13,7 @@
 #include "HepMC3/GenParticle.h"
 #include "HepMC3/GenVertex.h"
 
-int main(int , char const *argv[]) {
+int main(int, char const *argv[]) {
 
   auto rdr = HepMC3::deduce_reader(argv[1]);
   if (!rdr) {
