@@ -12,10 +12,13 @@
 #include "HepMC3/GenEvent.h"
 #include "HepMC3/GenParticle.h"
 #include "HepMC3/GenVertex.h"
+#include "Utils.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // ./processor_skeleton input_file outputfile                                //
 ///////////////////////////////////////////////////////////////////////////////
+using namespace e4nu;
+using namespace utils;
 
 int main(int, char const *argv[]) {
 
@@ -36,6 +39,10 @@ int main(int, char const *argv[]) {
               << std::endl;
     return 1;
   }
+  
+  TFile * output_gst = new TFile("genie.gst.root","RECREATE");
+  TTree * output_tree = new TTree("gst","GENIE Summary Event Tree");
+  SetGSTBranchAddress( output_tree );
 
   auto in_gen_run_info = evt.run_info();
   auto vtx_statuses =
@@ -50,33 +57,24 @@ int main(int, char const *argv[]) {
       std::make_shared<HepMC3::GenRunInfo>(*in_gen_run_info);
 
   constexpr int MyFSIVertexStatus = 123;
-  vtx_statuses[MyFSIVertexStatus] = {"rad_vcorr",
-                                     "Radiated vertex corrections"};
-  part_statuses[MyFSIVertexStatus] = {"rad_lepton",
-                                      "Radiated incoming and outcoming electrons"};
+  vtx_statuses[MyFSIVertexStatus] = {"rad_vcorr", "Radiated vertex corrections"};
+  part_statuses[MyFSIVertexStatus] = {"rad_lepton", "Radiated incoming and outcoming electrons"};
 
-  out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{
-      "emMCRadCorr", "version 1",
-      "Adding radiative corrections to EM interactions"});
+  out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
   
   NuHepMC::GR5::WriteVertexStatusIDDefinitions(out_gen_run_info, vtx_statuses);
-  NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info,
-                                                 part_statuses);
+  NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info, part_statuses);
   
   // add link to your paper describing this model to the citation metadata
-  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv",
-                                     {
-                                         "2404.12345v3",
-                                     });
+  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"2404.12345v3",});
   
-  auto wrtr = std::unique_ptr<HepMC3::Writer>(
-      NuHepMC::Writer::make_writer(argv[2], out_gen_run_info));
+  auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer(argv[2], out_gen_run_info));
   
   // re-open the file so that you start at the beginning
   rdr = HepMC3::deduce_reader(argv[1]);
   size_t nprocessed = 0;
   while (true) { // loop while there are events
-
+    
     rdr->read_event(evt);
     if (rdr->failed()) {
       std::cout << "Reached the end of the file after " << nprocessed
@@ -99,26 +97,22 @@ int main(int, char const *argv[]) {
 
     auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
 
-    auto ccfslep_pid =
-      (beampt->pid() > 0) ? (beampt->pid() - 1) : (beampt->pid() + 1);
-
-    // For EM  interactions, the lepton pid is the one of the beam:
-    //    auto emfslep_pid = beampt->pid() ; 
+    auto emfslep_pid = beampt->pid();
     
     // grab all primary leptons that were considered 'final state' by the
     // previous simulation
     //  might have to adjust for simulations that include lepton FSI already
-    auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {ccfslep_pid} );
+    auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {emfslep_pid} );
 
-    if (!primary_leptons.size() || primary_leptons.size() > 1 ) { // this event had no primary leptons.
+    if ( primary_leptons.size()!=1 ) { // this event had no primary leptons.
       wrtr->write_event(evt);      // write out events that we don't modify
       continue;
     }
 
     auto fslep = primary_leptons.back();
-
+  
     auto Elep = fslep->momentum().e();
-    (void)Elep;
+    
     auto Q2 = -(beampt->momentum() - fslep->momentum()).m2();
     (void)Q2;
 
@@ -130,23 +124,27 @@ int main(int, char const *argv[]) {
     auto fslep_postRad = std::make_shared<HepMC3::GenParticle>(
         fslep_preRad->data()); // copy the preFSI particle
     // apply modifications to kinematics.
-    fslep_postRad->set_momentum(fslep_postFSI->momentum() - qvec);
+    //    fslep_postRad->set_momentum(fslep_postRad->momentum() - 0.1);
 
     // make sure this postFSI lepton is set to be undecayed physical particle so
     // later simulation steps know how to handle it
-    fslep_postFSI->set_status(NuHepMC::ParticleStatus::UndecayedPhysical);
+    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical);
 
     // make a new vertex to represent the FSI
-    auto lepFSIvtx = std::make_shared<HepMC3::GenVertex>();
-    lepFSIvtx->set_status(
-        MyFSIVertexStatus); // set the vertex status for your FSI process.
-    evt.add_vertex(
-        lepFSIvtx); // add the vertex to the event before adding particles to it
-    lepFSIvtx->add_particle_in(fslep_preFSI);
-    lepFSIvtx->add_particle_out(fslep_postFSI);
+    auto lepRadvtx = std::make_shared<HepMC3::GenVertex>();
+    lepRadvtx->set_status(MyFSIVertexStatus); // set the vertex status for your FSI process.
+    evt.add_vertex(lepRadvtx); // add the vertex to the event before adding particles to it
+    lepRadvtx->add_particle_in(fslep_preRad);
+    lepRadvtx->add_particle_out(fslep_postRad);
 
     wrtr->write_event(evt); // write out events your modified event
+
+    // Store in gst output
+    StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
+    if( nprocessed == 400 ) break;
   }
   wrtr->close();
+  output_tree->Write();
+  output_gst->Close();
 }
