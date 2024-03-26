@@ -140,7 +140,7 @@ int main(int, char const *argv[]) {
     // Store in gst output
     StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
-    if( nprocessed == 400 ) break;
+    if( nprocessed == 40 ) break;
   }
   wrtr->close();
   output_tree->Write();

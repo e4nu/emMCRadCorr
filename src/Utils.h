@@ -245,40 +245,11 @@ namespace e4nu {
 
     void StoreHepMCToGST( const HepMC3::GenEvent evt, TTree * output_tree ){
       Iev = evt.event_number();
-
-      // True event information
-      HitNuc=0;
-      HitQrk=0;
-      FromSea=0;
-      ResId=0;
-      IsQel=false;
-      IsRes=false;
-      IsDis=false;
-      IsMec=false;
-      IsDfr=false;
-      IsImd=false;
-      IsNrm=false;
-      IsSingleK=false;
-      IsImdAnh=false;
-      IsNuEL=false;
-      IsEM=false;
-      IsCC=false;
-      IsNC=false;
-      IsCharmPro=false;
-      IsAMNuGamma=false;
-      IsHNL=false;
-      CodeNeut=0;
-      CodeNuance=0;
-
-      // Vertex information
-      VtxX = 0 ; 
-      VtxY = 0 ; 
-      VtxZ = 0 ; 
-      SumKEf = 0 ; 
-      CalResp0 = 0 ; 
-      XSec = 0 ;
-      DXSec = 0 ; 
-      KPS = 0 ; 
+      auto in_gen_run_info = evt.run_info();
+      bool is_GENIE = false ; 
+      for(auto const &tool : in_gen_run_info->tools()){
+	if( tool.name == "GENIE") is_GENIE == true ; 
+      }
 
       auto beampt = NuHepMC::Event::GetBeamParticle(evt);
       Ev = beampt->momentum().e();
@@ -287,27 +258,7 @@ namespace e4nu {
       Pzv = beampt->momentum().pz();
       Neutrino = beampt->pid();
 
-      auto tgtpt = NuHepMC::Event::GetTargetParticle(evt);
-      Target = tgtpt->pid();
-      if( Target == 2212 ) Target = 1000010010 ;
-      TargetZ=(Target/10000) - 1000*(Target/10000000);
-      TargetA=(Target/10) - 1000*(Target/10000);;
-
-      // Get sturck nucleon information
-      auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
-
-      for(auto & part : evt.particles()){
-	if(part->status() != NuHepMC::ParticleStatus::StruckNucleon) continue;
-
-	//this is the struck nucleon
-	En = part->momentum().e();
-	Pxn = part->momentum().px() ; 
-	Pyn = part->momentum().py() ; 
-	Pzn = part->momentum().pz() ; 
-	
-	break;
-      }
-      
+      auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);      
       auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {beampt->pid()} );	
       auto fslep = primary_leptons.back();  
       FSPrimLept = fslep->pid();
@@ -317,6 +268,73 @@ namespace e4nu {
       Pzl = fslep->momentum().pz();
       Pl = fslep->momentum().p3mod();
       Costhl = cos(fslep->momentum().theta());
+
+      if( beampt->pid() == kPdgElectron ) IsEM=true ; 
+      else if ( TMath::Abs(beampt->pid()) == 12 || TMath::Abs(beampt->pid()) == 14 || TMath::Abs(beampt->pid()) == 16 ) {
+	if( FSPrimLept == beampt->pid() ) IsNC=true;
+	else IsCC=true;
+      }
+
+      if(NuHepMC::GC1::SignalsConvention(evt.run_info(),"E.C.1")){
+	//the generator has promised that 300 <= process_id < 349 == IsCCRes and 350 <= process_id < 399 == IsNCRes
+	auto process_id = NuHepMC::ER3::ReadProcessID(evt);
+	if( process_id >=200 && process_id <= 299 ) IsQel=true;
+	else if ( process_id >=300 &&process_id <= 399 ) IsMec=true;
+	else if ( process_id >=400 &&process_id <= 499 ) IsRes=true;
+	else if ( process_id >=500 &&process_id <= 699 ) IsDis=true;
+	
+	// If missing it gets it from the GENIE format directly
+	if( process_id == 0 && is_GENIE ) { 
+	  int scatt_type = NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.ScatteringType");
+	  if( scatt_type == 1 ) IsQel = true ; 
+	  else if( scatt_type == 2 ) IsSingleK = true ; 
+	  else if( scatt_type == 3 ) IsDis = true ; 
+	  else if( scatt_type == 4 ) IsRes = true ; 
+	  else if( scatt_type == 5 ) IsCoh = true ;
+	  else if( scatt_type == 6 ) IsDfr = true ;
+	  else if( scatt_type == 7 ) IsNuEL = true ;
+	  else if( scatt_type == 8 ) IsImd = true ;
+	  else if( scatt_type == 9 ) IsAMNuGamma = true ;
+	  else if( scatt_type == 10 ) IsMec = true ;
+	  else if( scatt_type == 11 ) IsCharmPro = true ;
+	}
+      }
+      
+
+      auto tgtpt = NuHepMC::Event::GetTargetParticle(evt);
+      Target = tgtpt->pid();
+      if( Target == 2212 ) Target = 1000010010 ;
+      TargetZ=(Target/10000) - 1000*(Target/10000000);
+      TargetA=(Target/10) - 1000*(Target/10000);;
+
+      // Get sturck nucleon information
+      for(auto & part : evt.particles()){
+	if(part->status() == NuHepMC::ParticleStatus::StruckNucleon) { 
+	  //this is the struck nucleon
+	  En = part->momentum().e();
+	  Pxn = part->momentum().px() ; 
+	  Pyn = part->momentum().py() ; 
+	  Pzn = part->momentum().pz() ; 
+	  HitNuc=part->pid();
+	} else if (part->status() == NuHepMC::ParticleStatus::UndecayedPhysical || part->status() == NuHepMC::ParticleStatus::DecayedPhysical || part->status() == NuHepMC::ParticleStatus::IncomingBeam || part->status() == NuHepMC::ParticleStatus::Target ) { continue ; }
+	
+	//else std::cout << part->status() << std::endl;
+	// Storing before FSI particle kinematics
+	NiP = 0 ;
+	NiN = 0 ; 
+	NiPip = 0 ;
+	NiPim = 0 ;
+	NiPi0 = 0 ;
+	NiKp = 0 ;
+	NiKm = 0 ; 
+	NiK0 = 0 ; 
+	NiEM = 0 ;
+	NiOther = 0 ;
+	Ni = 0 ; 
+	// Pdgi, Resc, Ei, Pxi, Pyi, Pzi (all arrays)
+	
+	break;
+      }
       
       // Storing particles produced besides the outgoing lepton
       std::vector<HepMC3::ConstGenParticlePtr> final_parts = NuHepMC::Event::GetParticles_AllRealFinalState(evt,{});
@@ -335,45 +353,48 @@ namespace e4nu {
 	  else if ( Pdgf[i] == kPdgK0 ) ++NfK0 ; 
 	  else if ( Pdgf[i] == kPdgPhoton ) ++NfEM ; 
 	  else ++NfOther;
+
+	  Ef[i] = final_parts[i]->momentum().e();
+	  Pxf[i] = final_parts[i]->momentum().px();
+	  Pyf[i] = final_parts[i]->momentum().py();
+	  Pzf[i] = final_parts[i]->momentum().pz();
+	  Pf[i] = final_parts[i]->momentum().p3mod();
+	  Costhf[i] = cos(final_parts[i]->momentum().theta());
+	  if( is_GENIE ) { 
+	    Resc[i]=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.RescatterCode");
+	  }
 	}
-
-	Ef[i] = final_parts[i]->momentum().e();
-	Pxf[i] = final_parts[i]->momentum().px();
-	Pyf[i] = final_parts[i]->momentum().py();
-	Pzf[i] = final_parts[i]->momentum().pz();
-	Pf[i] = final_parts[i]->momentum().p3mod();
-	Costhf[i] = cos(final_parts[i]->momentum().theta());
       }
-
-      // Storing before FSI particle kinematics
-      NiP = 0 ;
-      NiN = 0 ; 
-      NiPip = 0 ;
-      NiPim = 0 ;
-      NiPi0 = 0 ;
-      NiKp = 0 ;
-      NiKm = 0 ; 
-      NiK0 = 0 ; 
-      NiEM = 0 ;
-      NiOther = 0 ;
-      Ni = 0 ; 
-      // Pdgi, Resc, Ei, Pxi, Pyi, Pzi (all arrays)
+      
+      static const double kProtonMass = 0.9382720813 ;
+      static const double kNeutronMass = 0.939565 ;
+      double M = (kProtonMass+kNeutronMass)/2.;
+      auto q = beampt->momentum() - fslep->momentum();
+      KineQ2 = -q.m2();
+      KineX = 0.5*KineQ2/(M+q.e()) ;
+      KineY = q.e()/beampt->momentum().e() ; 
+      KineW = pow(M,2) + 2*M*q.e() - KineQ2 ; 
 
       // Storing event kinematic varaiables	
       Weight = 1;
-      KineXs = 0 ; 
-      KineYs = 0 ; 
-      KineTs = 0 ;
-      KineWs = 0 ;
-      KineQ2s = 0 ; 
-      
-      KineX = 0 ;
-      KineY = 0 ; 
-      KineT = 0 ; 
-      KineQ2 = -(beampt->momentum() - fslep->momentum()).m2();
-      KineW = 0 ; 
-      EvRF = 0 ; 
+
+      if( is_GENIE ) { 
+	// True event information
+	HitQrk=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitQuarkPDG");
+	FromSea=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitSeaQuark");
+	ResId=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.Resonance");
+	XSec = NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.XSec") ;
+	DXSec = NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.DiffXSec") ; 
 	
+	// Not implemented: 
+	VtxX = 0 ; 
+	VtxY = 0 ; 
+	VtxZ = 0 ; 
+	SumKEf = 0 ; 
+	CalResp0 = 0 ; 
+	KPS = 0 ; 
+      }
+
       output_tree->Fill();
       return ;
     }
