@@ -96,21 +96,22 @@ int main(int, char const *argv[]) {
       continue;
     }
 
-
     // Add back true beam
     auto rad_beam = evt.particles()[beampt->id()];
     rad_beam->set_status( MyRadVertexStatus );
-
+    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
+    
     // Store generated photon
     auto beampt_preRad = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
-    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
+    beampt_preRad->set_pid(rad_beam->pid());
     beampt_preRad->set_momentum( true_beam );
     beampt_preRad->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
     
     auto beam_photon = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
     beam_photon->set_momentum( true_beam - beampt->momentum() ) ; 
+    beam_photon->set_pid( kPdgPhoton ) ;
     beam_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
-
+    
     auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
     auto emfslep_pid = beampt->pid();
     
@@ -125,6 +126,7 @@ int main(int, char const *argv[]) {
     }
 
     auto fslep = primary_leptons.back();
+
     auto fslep_preRad = evt.particles()[fslep->id()];
     fslep_preRad->set_status( MyRadVertexStatus );
 
@@ -132,8 +134,9 @@ int main(int, char const *argv[]) {
     auto out_photon = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
     HepMC3::FourVector Delta_Photon ( 0,0,0.1,0.1); // random for now 
     out_photon->set_momentum(Delta_Photon);
+    out_photon->set_pid( kPdgPhoton ); 
     out_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
-
+    
     // Modify outgoing electron kinematics
     auto fslep_postRad = std::make_shared<HepMC3::GenParticle>( fslep_preRad->data() ); 
     fslep_postRad->set_momentum(fslep_preRad->momentum()-Delta_Photon);
@@ -144,7 +147,9 @@ int main(int, char const *argv[]) {
     lepRadvtx->set_status(MyRadVertexStatus);
     evt.add_vertex(lepRadvtx); 
     lepRadvtx->add_particle_in(fslep_preRad);
+    lepRadvtx->add_particle_in(beampt_preRad);
     lepRadvtx->add_particle_out(fslep_postRad);
+    lepRadvtx->add_particle_out(beam_photon);
     lepRadvtx->add_particle_out(out_photon);
 
     wrtr->write_event(evt); // write out events your modified event

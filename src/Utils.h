@@ -16,7 +16,7 @@
 #include "HepMC3/GenEvent.h"
 #include "HepMC3/GenParticle.h"
 #include "HepMC3/GenVertex.h"
-
+#include "HepMC3/Print.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TBranch.h"
@@ -251,12 +251,21 @@ namespace e4nu {
 	if( tool.name == "GENIE") is_GENIE == true ; 
       }
 
+      HepMC3::Print::content(evt);
+
+      for(auto & part : evt.particles()){
+	std::cout << part->status() << " NuHepMC::ParticleStatus::UndecayedPhysical " << NuHepMC::ParticleStatus::UndecayedPhysical << " NuHepMC::ParticleStatus::IncomingBeam " << NuHepMC::ParticleStatus::IncomingBeam <<std::endl;
+      }
       auto beampt = NuHepMC::Event::GetBeamParticle(evt);
+      if( !beampt ) std::cout << " error here " << std::endl;
       Ev = beampt->momentum().e();
       Pxv = beampt->momentum().px();
       Pyv = beampt->momentum().py();
       Pzv = beampt->momentum().pz();
       Neutrino = beampt->pid();
+
+
+      std::cout << " here " << std::endl;
 
       auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);      
       auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {beampt->pid()} );	
@@ -300,12 +309,15 @@ namespace e4nu {
 	}
       }
       
-
+      std::cout << " here 2" << std::endl;
+      /*
       auto tgtpt = NuHepMC::Event::GetTargetParticle(evt);
       Target = tgtpt->pid();
       if( Target == 2212 ) Target = 1000010010 ;
       TargetZ=(Target/10000) - 1000*(Target/10000000);
       TargetA=(Target/10) - 1000*(Target/10000);;
+      */
+      std::cout << " here 3" << std::endl;
 
       // Get sturck nucleon information
       for(auto & part : evt.particles()){
@@ -335,7 +347,8 @@ namespace e4nu {
 	
 	break;
       }
-      
+      std::cout << " here 5" << std::endl;
+
       // Storing particles produced besides the outgoing lepton
       std::vector<HepMC3::ConstGenParticlePtr> final_parts = NuHepMC::Event::GetParticles_AllRealFinalState(evt,{});
 
@@ -365,6 +378,8 @@ namespace e4nu {
 	  }
 	}
       }
+      
+      std::cout << " here 10" << std::endl;
       
       static const double kProtonMass = 0.9382720813 ;
       static const double kNeutronMass = 0.939565 ;
