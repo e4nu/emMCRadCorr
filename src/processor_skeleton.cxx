@@ -96,7 +96,6 @@ int main(int, char const *argv[]) {
     }
 
     auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
-
     auto emfslep_pid = beampt->pid();
     
     // grab all primary leptons that were considered 'final state' by the
@@ -121,8 +120,7 @@ int main(int, char const *argv[]) {
         MyFSIVertexStatus); // set a status code corresponding to underwent your
                             // FSI
 
-    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>(
-        fslep_preRad->data()); // copy the preFSI particle
+    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>( fslep_preRad->data()); // copy the preFSI particle
     // apply modifications to kinematics.
     //    fslep_postRad->set_momentum(fslep_postRad->momentum() - 0.1);
 
