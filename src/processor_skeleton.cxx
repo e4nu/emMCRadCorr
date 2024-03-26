@@ -45,20 +45,21 @@ int main(int, char const *argv[]) {
   SetGSTBranchAddress( output_tree );
 
   auto in_gen_run_info = evt.run_info();
-  auto vtx_statuses =
-      NuHepMC::GR5::ReadVertexStatusIdDefinitions(in_gen_run_info);
-  auto part_statuses =
-      NuHepMC::GR6::ReadParticleStatusIdDefinitions(in_gen_run_info);
+  auto vtx_statuses = NuHepMC::GR5::ReadVertexStatusIdDefinitions(in_gen_run_info);
+  auto part_statuses = NuHepMC::GR6::ReadParticleStatusIdDefinitions(in_gen_run_info);
 
   // modify gen_run_info here to add to the file provenance that your code has
   // run on the file
 
-  auto out_gen_run_info =
-      std::make_shared<HepMC3::GenRunInfo>(*in_gen_run_info);
+  auto out_gen_run_info = std::make_shared<HepMC3::GenRunInfo>(*in_gen_run_info);
 
-  constexpr int MyFSIVertexStatus = 123;
-  vtx_statuses[MyFSIVertexStatus] = {"rad_vcorr", "Radiated vertex corrections"};
-  part_statuses[MyFSIVertexStatus] = {"rad_lepton", "Radiated incoming and outcoming electrons"};
+  // Define ID for radiative corrections that is not used
+  int MyRadVertexStatus = 123;
+  while ( vtx_statuses.count(MyRadVertexStatus) > 0 ) {
+    ++MyRadVertexStatus ; 
+  }
+  vtx_statuses[MyRadVertexStatus] = {"rad_vcorr", "Radiated corrections"};
+  part_statuses[MyRadVertexStatus] = {"rad_lepton", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
   
@@ -95,6 +96,21 @@ int main(int, char const *argv[]) {
       continue;
     }
 
+
+    // Add back true beam
+    auto rad_beam = evt.particles()[beampt->id()];
+    rad_beam->set_status( MyRadVertexStatus );
+
+    // Store generated photon
+    auto beampt_preRad = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
+    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
+    beampt_preRad->set_momentum( true_beam );
+    beampt_preRad->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
+    
+    auto beam_photon = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
+    beam_photon->set_momentum( true_beam - beampt->momentum() ) ; 
+    beam_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
+
     auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
     auto emfslep_pid = beampt->pid();
     
@@ -109,31 +125,27 @@ int main(int, char const *argv[]) {
     }
 
     auto fslep = primary_leptons.back();
-  
-    auto Elep = fslep->momentum().e();
-    
-    auto Q2 = -(beampt->momentum() - fslep->momentum()).m2();
-    (void)Q2;
-
     auto fslep_preRad = evt.particles()[fslep->id()];
-    fslep_preRad->set_status(
-        MyFSIVertexStatus); // set a status code corresponding to underwent your
-                            // FSI
+    fslep_preRad->set_status( MyRadVertexStatus );
 
-    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>( fslep_preRad->data()); // copy the preFSI particle
-    // apply modifications to kinematics.
-    //    fslep_postRad->set_momentum(fslep_postRad->momentum() - 0.1);
+    // Store generated photon
+    auto out_photon = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
+    HepMC3::FourVector Delta_Photon ( 0,0,0.1,0.1); // random for now 
+    out_photon->set_momentum(Delta_Photon);
+    out_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
 
-    // make sure this postFSI lepton is set to be undecayed physical particle so
-    // later simulation steps know how to handle it
-    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical);
+    // Modify outgoing electron kinematics
+    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>( fslep_preRad->data() ); 
+    fslep_postRad->set_momentum(fslep_preRad->momentum()-Delta_Photon);
+    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ; // detected electron
 
-    // make a new vertex to represent the FSI
+    // make a new vertex to represent the radiated event
     auto lepRadvtx = std::make_shared<HepMC3::GenVertex>();
-    lepRadvtx->set_status(MyFSIVertexStatus); // set the vertex status for your FSI process.
-    evt.add_vertex(lepRadvtx); // add the vertex to the event before adding particles to it
+    lepRadvtx->set_status(MyRadVertexStatus);
+    evt.add_vertex(lepRadvtx); 
     lepRadvtx->add_particle_in(fslep_preRad);
     lepRadvtx->add_particle_out(fslep_postRad);
+    lepRadvtx->add_particle_out(out_photon);
 
     wrtr->write_event(evt); // write out events your modified event
 
