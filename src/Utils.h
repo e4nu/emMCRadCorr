@@ -81,6 +81,10 @@ double Ev          = 0;      // Neutrino energy @ LAB
 double Pxv         = 0;      // Neutrino px @ LAB
 double Pyv         = 0;      // Neutrino py @ LAB
 double Pzv         = 0;      // Neutrino pz @ LAB
+double Evcorr      = 0;      // Neutrino energy @ LAB after rad corr (vertex)
+double Pxvcorr     = 0;      // Neutrino px @ LAB after rad corr (vertex)
+double Pyvcorr     = 0;      // Neutrino py @ LAB after rad corr (vertex)
+double Pzvcorr     = 0;      // Neutrino pz @ LAB after rad corr (vertex)
 double En          = 0;      // Initial state hit nucleon energy @ LAB
 double Pxn         = 0;      // Initial state hit nucleon px @ LAB
 double Pyn         = 0;      // Initial state hit nucleon py @ LAB
@@ -91,6 +95,12 @@ double Pyl         = 0;      // Final state primary lepton py @ LAB
 double Pzl         = 0;      // Final state primary lepton pz @ LAB
 double Pl          = 0;      // Final state primary lepton p  @ LAB
 double Costhl      = 0;      // Final state primary lepton cos(theta) wrt to neutrino direction
+double Elcorr      = 0;      // Final state primary lepton energy @ LAB before rad corr (vertex)
+double Pxlcorr     = 0;      // Final state primary lepton px @ LAB before rad corr (vertex)
+double Pylcorr     = 0;      // Final state primary lepton py @ LAB before rad corr (vertex)
+double Pzlcorr     = 0;      // Final state primary lepton pz @ LAB before rad corr (vertex)
+double Plcorr      = 0;      // Final state primary lepton p  @ LBA before rad corr (vertex)
+double Costhlcorr  = 0;      // Final state primary lepton cos(theta) wrt to neutrino direction
 int    NfP         = 0;      // Nu. of final state p's + \bar{p}'s (after intranuclear rescattering)
 int    NfN         = 0;      // Nu. of final state n's + \bar{n}'s
 int    NfPip       = 0;      // Nu. of final state pi+'s
@@ -187,6 +197,10 @@ namespace e4nu {
       output_tree->Branch("pxv", &Pxv, "pxv/D" );
       output_tree->Branch("pyv", &Pyv, "pyv/D" );
       output_tree->Branch("pzv", &Pzv, "pzv/D" );
+      output_tree->Branch("Evcorr", &Evcorr, "Evcorr/D" );
+      output_tree->Branch("pxvcorr", &Pxvcorr, "pxvcorr/D" );
+      output_tree->Branch("pyvcorr", &Pyvcorr, "pyvcorr/D" );
+      output_tree->Branch("pzvcorr", &Pzvcorr, "pzvcorr/D" );
       output_tree->Branch("En", &En, "En/D" );
       output_tree->Branch("pxn", &Pxn, "pxn/D" );
       output_tree->Branch("pyn", &Pyn, "pyn/D" );
@@ -197,6 +211,12 @@ namespace e4nu {
       output_tree->Branch("pzl", &Pzl, "pzl/D" );
       output_tree->Branch("pl",  &Pl,  "pl/D" );
       output_tree->Branch("cthl", &Costhl, "cthl/D" );
+      output_tree->Branch("Elcorr", &Elcorr, "Elcorr/D" );
+      output_tree->Branch("pxlcorr", &Pxlcorr, "pxlcorr/D" );
+      output_tree->Branch("pylcorr", &Pylcorr, "pylcorr/D" );
+      output_tree->Branch("pzlcorr", &Pzlcorr, "pzlcorr/D" );
+      output_tree->Branch("plcorr",  &Plcorr,  "plcorr/D" );
+      output_tree->Branch("cthlcorr", &Costhlcorr, "cthlcorr/D" );
       output_tree->Branch("nfp", &NfP, "nfp/I" );
       output_tree->Branch("nfn", &NfN, "nfn/I" );
       output_tree->Branch("nfpip",  &NfPip, "nfpip/I" );
@@ -251,24 +271,16 @@ namespace e4nu {
 	if( tool.name == "GENIE") is_GENIE == true ; 
       }
 
-      HepMC3::Print::content(evt);
+      //HepMC3::Print::content(evt);
 
-      for(auto & part : evt.particles()){
-	std::cout << part->status() << " NuHepMC::ParticleStatus::UndecayedPhysical " << NuHepMC::ParticleStatus::UndecayedPhysical << " NuHepMC::ParticleStatus::IncomingBeam " << NuHepMC::ParticleStatus::IncomingBeam <<std::endl;
-      }
       auto beampt = NuHepMC::Event::GetBeamParticle(evt);
-      if( !beampt ) std::cout << " error here " << std::endl;
       Ev = beampt->momentum().e();
       Pxv = beampt->momentum().px();
       Pyv = beampt->momentum().py();
       Pzv = beampt->momentum().pz();
       Neutrino = beampt->pid();
 
-
-      std::cout << " here " << std::endl;
-
-      auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);      
-      auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {beampt->pid()} );	
+      auto primary_leptons = NuHepMC::Event::GetParticles_All(evt, NuHepMC::ParticleStatus::UndecayedPhysical, {beampt->pid()} );	
       auto fslep = primary_leptons.back();  
       FSPrimLept = fslep->pid();
       El = fslep->momentum().e();
@@ -309,15 +321,26 @@ namespace e4nu {
 	}
       }
       
-      std::cout << " here 2" << std::endl;
-      /*
       auto tgtpt = NuHepMC::Event::GetTargetParticle(evt);
       Target = tgtpt->pid();
       if( Target == 2212 ) Target = 1000010010 ;
       TargetZ=(Target/10000) - 1000*(Target/10000000);
       TargetA=(Target/10) - 1000*(Target/10000);;
-      */
-      std::cout << " here 3" << std::endl;
+
+      // Get electrons with id radcorr
+      int id_radcorr = 123;
+      auto corr_leptons = NuHepMC::Event::GetParticles_All(evt, id_radcorr, {beampt->pid()} );	
+      Evcorr = corr_leptons[0]->momentum().e();
+      Pxvcorr = corr_leptons[0]->momentum().px();
+      Pyvcorr = corr_leptons[0]->momentum().py();
+      Pzvcorr = corr_leptons[0]->momentum().pz();
+
+      Elcorr = corr_leptons[1]->momentum().e();
+      Pxlcorr = corr_leptons[1]->momentum().px();
+      Pylcorr = corr_leptons[1]->momentum().py();
+      Pzlcorr = corr_leptons[1]->momentum().pz();
+      Plcorr = corr_leptons[1]->momentum().p3mod();
+      Plcorr = cos( corr_leptons[1]->momentum().theta());
 
       // Get sturck nucleon information
       for(auto & part : evt.particles()){
@@ -329,30 +352,15 @@ namespace e4nu {
 	  Pzn = part->momentum().pz() ; 
 	  HitNuc=part->pid();
 	} else if (part->status() == NuHepMC::ParticleStatus::UndecayedPhysical || part->status() == NuHepMC::ParticleStatus::DecayedPhysical || part->status() == NuHepMC::ParticleStatus::IncomingBeam || part->status() == NuHepMC::ParticleStatus::Target ) { continue ; }
-	
-	//else std::cout << part->status() << std::endl;
-	// Storing before FSI particle kinematics
-	NiP = 0 ;
-	NiN = 0 ; 
-	NiPip = 0 ;
-	NiPim = 0 ;
-	NiPi0 = 0 ;
-	NiKp = 0 ;
-	NiKm = 0 ; 
-	NiK0 = 0 ; 
-	NiEM = 0 ;
-	NiOther = 0 ;
-	Ni = 0 ; 
-	// Pdgi, Resc, Ei, Pxi, Pyi, Pzi (all arrays)
-	
 	break;
       }
-      std::cout << " here 5" << std::endl;
+
 
       // Storing particles produced besides the outgoing lepton
       std::vector<HepMC3::ConstGenParticlePtr> final_parts = NuHepMC::Event::GetParticles_AllRealFinalState(evt,{});
 
       Nf = final_parts.size() ;
+      NfEM = 0 ;
       for( unsigned int i = 0 ; i < Nf ; ++i ) { 
 	Pdgf[i] = final_parts[i]->pid();
 	if( Pdgf[i] != beampt->pid() ) { 
@@ -378,9 +386,7 @@ namespace e4nu {
 	  }
 	}
       }
-      
-      std::cout << " here 10" << std::endl;
-      
+           
       static const double kProtonMass = 0.9382720813 ;
       static const double kNeutronMass = 0.939565 ;
       double M = (kProtonMass+kNeutronMass)/2.;
@@ -413,8 +419,7 @@ namespace e4nu {
       output_tree->Fill();
       return ;
     }
-
-
+    
     HepMC3::GenParticlePtr GetPartFromId(HepMC3::GenEvent &evt, int id){
       for(auto &part : evt.particles()){
 	if(part->id() == id){ return part; }

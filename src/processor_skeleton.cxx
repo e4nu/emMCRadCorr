@@ -48,9 +48,6 @@ int main(int, char const *argv[]) {
 
   // Define ID for radiative corrections that is not used
   int MyRadVertexStatus = 123;
-  while ( vtx_statuses.count(MyRadVertexStatus) > 0 ) {
-    ++MyRadVertexStatus ; 
-  }
   part_statuses[MyRadVertexStatus] = {"rad_lepton", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
@@ -142,7 +139,6 @@ int main(int, char const *argv[]) {
     // Store in gst output
     StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
-    if( nprocessed == 40 ) break;
   }
   wrtr->close();
   output_tree->Write();
