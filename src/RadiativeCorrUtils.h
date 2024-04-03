@@ -7,12 +7,12 @@
 namespace e4nu {
   namespace utils
   {
-
+    // Constants
     static const double kAem = 1./137.03599976; // EM coupling const, dimensionless 
     static const double kAem2  = TMath::Power(kAem,2);
     static const double kPi = TMath::Pi(); 
     static const double kElectronMass = 0.000510998 ;
-
+    
     // QEL
     unsigned int GetTargetNProtons( const unsigned int target_pdg ) ;
     double RadCorrQELVertex( const double Q2 ) ; 

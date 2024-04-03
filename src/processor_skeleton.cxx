@@ -134,6 +134,9 @@ int main(int, char const *argv[]) {
     evt.add_particle(beam_photon);
     evt.add_particle(out_photon);
 
+    // Alter event weigth to account for vertex and vacumm effects
+    evt.weights()[0] = 2;
+
     wrtr->write_event(evt); // write out events your modified event
 
     // Store in gst output

@@ -3,8 +3,8 @@
 // _________________________________________________________________________________
 #include <iostream>
 #include <vector>
-#include "Utils.h"
 #include "RadiativeCorrUtils.h"
+#include "Utils.h"
 #include "TFile.h"
 #include "TH1D.h"
 
@@ -41,34 +41,34 @@ int main( int argc, char* argv[] ) {
   double MaxEPhoton = 0.2 ;
 
   if( argc > 1 ) { // configure rest of analysis
-    if( ExistArg("output-file",argc,argv)) {
-      output_file = GetArg("output-file",argc,argv); 
+    if( utils::ExistArg("output-file",argc,argv)) {
+      output_file = utils::GetArg("output-file",argc,argv); 
     }
-    if( ExistArg("rad-model",argc,argv)) {
-      rad_model = GetArg("rad-model",argc,argv); 
+    if( utils::ExistArg("rad-model",argc,argv)) {
+      rad_model = utils::GetArg("rad-model",argc,argv); 
     }
-    if( ExistArg("ebeam",argc,argv)) {
-      EBeam = stod(GetArg("ebeam",argc,argv)); 
+    if( utils::ExistArg("ebeam",argc,argv)) {
+      EBeam = stod(utils::GetArg("ebeam",argc,argv)); 
       Emax = EBeam+0.02 ; 
     }
-    if( ExistArg("target",argc,argv)) {
-      tgt = stoi(GetArg("target",argc,argv)); 
+    if( utils::ExistArg("target",argc,argv)) {
+      tgt = stoi(utils::GetArg("target",argc,argv)); 
       thickness = utils::GetCLAS6TargetThickness(tgt); // Defaulted to CLAS6
     }
-    if( ExistArg("thickness",argc,argv)) {
-      thickness = stoi(GetArg("thickness",argc,argv)); 
+    if( utils::ExistArg("thickness",argc,argv)) {
+      thickness = stoi(utils::GetArg("thickness",argc,argv)); 
     }
-    if( ExistArg("resolution",argc,argv)) {
-      resolution = stod(GetArg("resolution",argc,argv)); 
+    if( utils::ExistArg("resolution",argc,argv)) {
+      resolution = stod(utils::GetArg("resolution",argc,argv)); 
     }
-    if( ExistArg("Emin",argc,argv)) {
-      Emin = stod(GetArg("Emin",argc,argv)); 
+    if( utils::ExistArg("Emin",argc,argv)) {
+      Emin = stod(utils::GetArg("Emin",argc,argv)); 
     }
-    if( ExistArg("Emax",argc,argv)) {
-      Emax = stod(GetArg("Emax",argc,argv)); 
+    if( utils::ExistArg("Emax",argc,argv)) {
+      Emax = stod(utils::GetArg("Emax",argc,argv)); 
     }
-    if( ExistArg("max-Ephoton",argc,argv)) {
-      MaxEPhoton = stod(GetArg("max-Ephoton",argc,argv)); 
+    if( utils::ExistArg("max-Ephoton",argc,argv)) {
+      MaxEPhoton = stod(utils::GetArg("max-Ephoton",argc,argv)); 
     }
   }
   // Calculate number of bins given resolution

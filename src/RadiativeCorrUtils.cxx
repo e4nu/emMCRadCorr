@@ -8,7 +8,6 @@
  * \date Nov 2023                                                                                                                                                                                              
  **/
 #include <iostream>
-#include <TMath.h>
 #include <TF1.h>
 #include "RadiativeCorrUtils.h"
 

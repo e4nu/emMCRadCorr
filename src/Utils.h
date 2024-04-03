@@ -7,6 +7,7 @@
 #define _UTILS_H_
 #include <iostream>
 #include <string> 
+#include <TMath.h>
 #include "NuHepMC/HepMC3Features.hxx"
 #include "NuHepMC/EventUtils.hxx"
 #include "NuHepMC/ReaderUtils.hxx"
@@ -341,7 +342,7 @@ namespace e4nu {
       Pzlcorr = corr_leptons[1]->momentum().pz();
       Plcorr = corr_leptons[1]->momentum().p3mod();
       Plcorr = cos( corr_leptons[1]->momentum().theta());
-
+      
       // Get sturck nucleon information
       for(auto & part : evt.particles()){
 	if(part->status() == NuHepMC::ParticleStatus::StruckNucleon) { 
@@ -354,7 +355,6 @@ namespace e4nu {
 	} else if (part->status() == NuHepMC::ParticleStatus::UndecayedPhysical || part->status() == NuHepMC::ParticleStatus::DecayedPhysical || part->status() == NuHepMC::ParticleStatus::IncomingBeam || part->status() == NuHepMC::ParticleStatus::Target ) { continue ; }
 	break;
       }
-
 
       // Storing particles produced besides the outgoing lepton
       std::vector<HepMC3::ConstGenParticlePtr> final_parts = NuHepMC::Event::GetParticles_AllRealFinalState(evt,{});
@@ -396,9 +396,6 @@ namespace e4nu {
       KineY = q.e()/beampt->momentum().e() ; 
       KineW = pow(M,2) + 2*M*q.e() - KineQ2 ; 
 
-      // Storing event kinematic varaiables	
-      Weight = 1;
-
       if( is_GENIE ) { 
 	// True event information
 	HitQrk=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitQuarkPDG");
@@ -415,7 +412,9 @@ namespace e4nu {
 	CalResp0 = 0 ; 
 	KPS = 0 ; 
       }
-
+      
+      Weight = evt.weights()[0]; // get event weight
+ 
       output_tree->Fill();
       return ;
     }
