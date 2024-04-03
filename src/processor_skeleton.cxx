@@ -29,9 +29,6 @@ int main(int, char const *argv[]) {
     return 1;
   }
 
-  // for files that you know can be opened multiple times without failing (i.e.
-  // not a stream) it is easiest to read one event, and grab the
-  // HepMC3::GenRunInfo here.
   HepMC3::GenEvent evt;
   rdr->read_event(evt);
   if (rdr->failed()) {
@@ -47,10 +44,6 @@ int main(int, char const *argv[]) {
   auto in_gen_run_info = evt.run_info();
   auto vtx_statuses = NuHepMC::GR5::ReadVertexStatusIdDefinitions(in_gen_run_info);
   auto part_statuses = NuHepMC::GR6::ReadParticleStatusIdDefinitions(in_gen_run_info);
-
-  // modify gen_run_info here to add to the file provenance that your code has
-  // run on the file
-
   auto out_gen_run_info = std::make_shared<HepMC3::GenRunInfo>(*in_gen_run_info);
 
   // Define ID for radiative corrections that is not used
@@ -58,7 +51,6 @@ int main(int, char const *argv[]) {
   while ( vtx_statuses.count(MyRadVertexStatus) > 0 ) {
     ++MyRadVertexStatus ; 
   }
-  vtx_statuses[MyRadVertexStatus] = {"rad_vcorr", "Radiated corrections"};
   part_statuses[MyRadVertexStatus] = {"rad_lepton", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
@@ -83,8 +75,6 @@ int main(int, char const *argv[]) {
       break;
     }
     evt.set_run_info(out_gen_run_info);
-    // ensure units are in MeV will perform conversions if the previous
-    // generation step used GeV
     evt.set_units(HepMC3::Units::GEV, HepMC3::Units::MM);
 
     auto beampt = NuHepMC::Event::GetBeamParticle(evt);
@@ -97,7 +87,7 @@ int main(int, char const *argv[]) {
     }
 
     // Add back true beam
-    auto rad_beam = evt.particles()[beampt->id()];
+    auto rad_beam = GetPartFromId(evt, beampt->id());
     rad_beam->set_status( MyRadVertexStatus );
     const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
     
@@ -127,7 +117,7 @@ int main(int, char const *argv[]) {
 
     auto fslep = primary_leptons.back();
 
-    auto fslep_preRad = evt.particles()[fslep->id()];
+    auto fslep_preRad = GetPartFromId(evt, fslep->id());
     fslep_preRad->set_status( MyRadVertexStatus );
 
     // Store generated photon
@@ -142,15 +132,10 @@ int main(int, char const *argv[]) {
     fslep_postRad->set_momentum(fslep_preRad->momentum()-Delta_Photon);
     fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ; // detected electron
 
-    // make a new vertex to represent the radiated event
-    auto lepRadvtx = std::make_shared<HepMC3::GenVertex>();
-    lepRadvtx->set_status(MyRadVertexStatus);
-    evt.add_vertex(lepRadvtx); 
-    lepRadvtx->add_particle_in(fslep_preRad);
-    lepRadvtx->add_particle_in(beampt_preRad);
-    lepRadvtx->add_particle_out(fslep_postRad);
-    lepRadvtx->add_particle_out(beam_photon);
-    lepRadvtx->add_particle_out(out_photon);
+    evt.add_particle(beampt_preRad);
+    evt.add_particle(fslep_postRad);
+    evt.add_particle(beam_photon);
+    evt.add_particle(out_photon);
 
     wrtr->write_event(evt); // write out events your modified event
 

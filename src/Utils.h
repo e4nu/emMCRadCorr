@@ -413,6 +413,14 @@ namespace e4nu {
       output_tree->Fill();
       return ;
     }
+
+
+    HepMC3::GenParticlePtr GetPartFromId(HepMC3::GenEvent &evt, int id){
+      for(auto &part : evt.particles()){
+	if(part->id() == id){ return part; }
+      }
+      return nullptr;
+    }
   }
 }
 
