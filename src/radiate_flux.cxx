@@ -3,19 +3,14 @@
 // _________________________________________________________________________________
 #include <iostream>
 #include <vector>
+#include "AppsUtils.h"
 #include "RadiativeCorrUtils.h"
-#include "PlottingUtils.h"
-#include "ConstantsI.cxx"
-#include "ParticleI.cxx"
-#include "RadConstants.cxx"
 #include "TFile.h"
 #include "TH1D.h"
 
 using namespace std;
 using namespace e4nu;
 using namespace e4nu::utils;
-using namespace e4nu::conf;
-using namespace e4nu::plotting;
 
 /////////////////////////////////////////////////////////////////
 // Options:                                                    //
@@ -41,7 +36,7 @@ int main( int argc, char* argv[] ) {
   double resolution = 0.01;
   double Emin = 0.75 ;
   double Emax = EBeam+0.02 ;
-  double thickness = e4nu::conf::GetThickness(tgt); // Defaulted to CLAS6
+  double thickness = utils::GetCLAS6TargetThickness(tgt); // Defaulted to CLAS6
   string rad_model = "simc";
   double MaxEPhoton = 0.2 ;
 
@@ -58,7 +53,7 @@ int main( int argc, char* argv[] ) {
     }
     if( ExistArg("target",argc,argv)) {
       tgt = stoi(GetArg("target",argc,argv)); 
-      thickness = e4nu::conf::GetThickness(tgt); // Defaulted to CLAS6
+      thickness = utils::GetCLAS6TargetThickness(tgt); // Defaulted to CLAS6
     }
     if( ExistArg("thickness",argc,argv)) {
       thickness = stoi(GetArg("thickness",argc,argv)); 
@@ -86,10 +81,7 @@ int main( int argc, char* argv[] ) {
   TLorentzVector V4_beam(0,0,EBeam,EBeam);
   unsigned int nentries = 100000; 
   for( unsigned int i = 0 ; i < nentries ; ++i ) { 
-    double egamma = 0 ; 
-    if( rad_model == "simc" || rad_model == "schwinger" || rad_model == "vanderhaeghen" || rad_model == "motsai" || rad_model == "myversion" ) {
-      egamma = SIMCEnergyLoss( V4_beam, 11, tgt, thickness, MaxEPhoton ) ;
-    } else if ( rad_model == "simple" ) egamma = SimpleEnergyLoss( V4_beam, tgt, thickness, MaxEPhoton ) ; 
+    double egamma = SIMCEnergyLoss( V4_beam, 11, tgt, thickness, MaxEPhoton ) ;
     double Ee = EBeam - egamma ;
     hradflux -> Fill( Ee ) ; 
   }

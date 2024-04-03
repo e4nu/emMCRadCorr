@@ -11,14 +11,9 @@
 #include <TMath.h>
 #include <TF1.h>
 #include "RadiativeCorrUtils.h"
-#include "TargetUtils.cxx"
-#include "ParticleUtils.cxx"
-#include "ConstantsI.cxx"
-#include "ParticleI.cxx"
 
 using namespace std;
 using namespace e4nu;
-using namespace conf;
 
 double utils::VanderhagenELoss( const double Q2 , const double Ee ) {
   double e_gamma_min = 1E-25;
@@ -69,6 +64,21 @@ double utils::RadCorrQELRealRad( const double Q2, const double E, const double E
   return dreal ; 
 }
 
+unsigned int utils::GetTargetNProtons( const unsigned int target_pdg ) {
+
+  static const unsigned int kPdgH   = 1000010010; 
+  static const unsigned int kPdgHe3 = 1000020030; 
+  static const unsigned int kPdgHe4 = 1000020040; 
+  static const unsigned int kPdgC12 = 1000060120 ; 
+  static const unsigned int kPdgFe56 = 1000260560 ;
+
+  if ( target_pdg == kPdgH ) return 1 ;
+  else if ( target_pdg == kPdgHe3 || target_pdg == kPdgHe4 ) return 2 ; 
+  else if ( target_pdg == kPdgC12 ) return 6 ; 
+  else if ( target_pdg == kPdgFe56) return 26 ; 
+  return 0;
+}
+
 double utils::SIMCBFactor( const double tgt_pdg ) { 
   // https://journals.aps.org/prc/abstract/10.1103/PhysRevC.64.054610
   double Z = utils::GetTargetNProtons(tgt_pdg);
@@ -85,7 +95,7 @@ double utils::SIMCBFactor( const double tgt_pdg ) {
 double utils::SIMCEnergyLoss(const TLorentzVector particle, const int p_pdg, const double tgt_pdg, const double thickness, const double max_Ephoton ) {
   // https://journals.aps.org/prc/abstract/10.1103/PhysRevC.64.054610
   double b = SIMCBFactor( tgt_pdg );
-  double lambda = TMath::Log(4*pow(particle.P(),2)/pow(utils::GetParticleMass(p_pdg),2)) - 1 ;
+  double lambda = TMath::Log(4*pow(particle.P(),2)/pow(kElectronMass,2)) - 1 ;
   if( particle.Pz() != particle.E() ) lambda += TMath::Log(0.5*(1-particle.CosTheta())) ;
   lambda += 2*TMath::Log(4.325/particle.E());
   lambda *= (kAem/kPi) ;
@@ -106,22 +116,6 @@ double utils::SIMCEnergyLoss(const TLorentzVector particle, const int p_pdg, con
   return energyLoss ; 
 }
 
-double utils::SimpleEnergyLoss(const TLorentzVector electron, const double tgt_pdg, const double thickness, const double max_Ephoton ) {
-  // Reference https://github.com/adishka/Generator/blob/adi_radcorr/src/Physics/Common/RadiativeCorrector.cxx
-  double b = SIMCBFactor( tgt_pdg ); 
-  double lambda = (kAem/kPi)*( 2*TMath::Log(2*electron.E()/kElectronMass) - 1 ) + b*thickness;
-  //  if( particle.Pz() != particle.E() ) lambda += TMath::Log(0.5*(1-particle.CosTheta())) ;
-  double e_gamma_max = max_Ephoton*electron.E() ;
-  double e_gamma_min = 1E-25;
-
-  TF1 *f = new TF1("f","[0]*pow(x,[0]-1)/[1]",e_gamma_min,e_gamma_max);
-  f->SetParameter(0,lambda);
-  f->SetParameter(1,pow(electron.E(),-1.*lambda));
-  double energyLoss = f->GetRandom();
-  delete f;
-  return energyLoss ; 
-}
-
 TLorentzVector utils::RadOutElectron( const TLorentzVector electron_vertex, TLorentzVector & out_electron, const int tgt, const double thickness, const double max_Ephoton, const string model ) {
   // Compute true detected outgoing electron kinematics with energy loss method
   double egamma = 0 ; 
@@ -135,7 +129,7 @@ TLorentzVector utils::RadOutElectron( const TLorentzVector electron_vertex, TLor
   out_electron = electron_vertex - OutGamma ; 
   return OutGamma;
 } 
-
+/*
 double utils::SIMCRadCorrWeight( const e4nu::Event & event, const double thickness, const double max_Ephoton, const std::string model ) {
 
   double weight = 1; 
@@ -225,7 +219,7 @@ double utils::SIMCRadCorrWeight( const e4nu::Event & event, const double thickne
 
   return weight;
 }
-
+*/
 TLorentzVector utils::GetEmittedHardPhoton( TLorentzVector electron, double eloss ) {
 
   double ptLoss;
