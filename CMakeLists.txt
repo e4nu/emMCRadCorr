@@ -9,7 +9,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Add your source files
 set(SOURCES
     src/Utils.h
-    src/AppsUtils.cxx
     src/RadiativeCorrUtils.cxx
     src/radiate_flux.cxx
 )
@@ -34,3 +33,4 @@ CPMAddPackage(
   OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
 )
 target_link_libraries(processor_skeleton PUBLIC NuHepMC::CPPUtils)
+target_link_libraries(radiate_flux PUBLIC NuHepMC::CPPUtils)
