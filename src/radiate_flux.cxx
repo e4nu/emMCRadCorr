@@ -78,7 +78,7 @@ int main( int argc, char* argv[] ) {
   std::unique_ptr<TFile> myFile( TFile::Open(output_file.c_str(), "RECREATE") );
   TH1D * hradflux = new TH1D( "hradflux", "Radiated Flux", nbins, Emin, Emax) ;   
 
-  TLorentzVector V4_beam(0,0,EBeam,EBeam);
+  HepMC3::FourVector V4_beam(0,0,EBeam,EBeam);
   unsigned int nentries = 100000; 
   for( unsigned int i = 0 ; i < nentries ; ++i ) { 
     double egamma = SIMCEnergyLoss( V4_beam, 11, tgt, thickness, MaxEPhoton ) ;

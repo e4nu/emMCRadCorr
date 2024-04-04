@@ -267,11 +267,11 @@ namespace e4nu {
     void StoreHepMCToGST( const HepMC3::GenEvent evt, TTree * output_tree ){
       Iev = evt.event_number();
       auto in_gen_run_info = evt.run_info();
-      bool is_GENIE = false ; 
+      bool is_GENIE = false ;
       for(auto const &tool : in_gen_run_info->tools()){
 	if( tool.name == "GENIE") is_GENIE == true ; 
       }
-
+      is_GENIE == true ; 
       //HepMC3::Print::content(evt);
 
       auto beampt = NuHepMC::Event::GetBeamParticle(evt);
@@ -386,16 +386,18 @@ namespace e4nu {
 	  }
 	}
       }
-           
+      
       static const double kProtonMass = 0.9382720813 ;
       static const double kNeutronMass = 0.939565 ;
       double M = (kProtonMass+kNeutronMass)/2.;
-      auto q = beampt->momentum() - fslep->momentum();
+      // Compute kinematics with true vertex kinematics
+      auto q = corr_leptons[0]->momentum() - corr_leptons[1]->momentum();
       KineQ2 = -q.m2();
       KineX = 0.5*KineQ2/(M+q.e()) ;
       KineY = q.e()/beampt->momentum().e() ; 
       KineW = pow(M,2) + 2*M*q.e() - KineQ2 ; 
-
+      
+      is_GENIE = true ; 
       if( is_GENIE ) { 
 	// True event information
 	HitQrk=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitQuarkPDG");
@@ -403,7 +405,10 @@ namespace e4nu {
 	ResId=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.Resonance");
 	XSec = NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.XSec") ;
 	DXSec = NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.DiffXSec") ; 
-	
+	KineQ2=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.Q2");
+	KineW=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.W");
+
+	std::cout << KineQ2 - -q.m2()<<std::endl;
 	// Not implemented: 
 	VtxX = 0 ; 
 	VtxY = 0 ; 

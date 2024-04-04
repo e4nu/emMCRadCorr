@@ -9,19 +9,22 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Add your source files
 set(SOURCES
     src/Utils.h
+    src/RadiativeCorrUtils.h
     src/RadiativeCorrUtils.cxx
-    src/radiate_flux.cxx
 )
 
 # Add executable target
-add_executable(radiate_flux ${SOURCES})
-add_executable(processor_skeleton src/processor_skeleton.cxx)
+add_executable(radiate_flux src/radiate_flux.cxx ${SOURCES})
+add_executable(processor_skeleton src/processor_skeleton.cxx ${SOURCES})
 
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})
 target_link_libraries(radiate_flux PUBLIC ROOT::Physics)
 target_link_libraries(radiate_flux PUBLIC ROOT::Tree)
 target_link_libraries(radiate_flux PUBLIC ROOT::Hist)
+target_link_libraries(processor_skeleton PUBLIC ROOT::Physics)
+target_link_libraries(processor_skeleton PUBLIC ROOT::Tree)
+target_link_libraries(processor_skeleton PUBLIC ROOT::Hist)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 

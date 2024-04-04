@@ -1,17 +1,15 @@
 // Leave this at the top to enable features detected at build time in headers in
 // HepMC3
 #include "NuHepMC/HepMC3Features.hxx"
-
 #include "NuHepMC/EventUtils.hxx"
 #include "NuHepMC/ReaderUtils.hxx"
 #include "NuHepMC/WriterUtils.hxx"
 #include "NuHepMC/make_writer.hxx"
-
 #include "HepMC3/ReaderFactory.h"
-
 #include "HepMC3/GenEvent.h"
 #include "HepMC3/GenParticle.h"
 #include "HepMC3/GenVertex.h"
+#include "RadiativeCorrUtils.h"
 #include "Utils.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,14 +80,14 @@ int main(int, char const *argv[]) {
       wrtr->write_event(evt); // write out events that we don't modify
       continue;
     }
-
+    
     // Add back true beam
     auto rad_beam = GetPartFromId(evt, beampt->id());
     rad_beam->set_status( MyRadVertexStatus );
-    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
     
     // Store generated photon
     auto beampt_preRad = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
+    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
     beampt_preRad->set_pid(rad_beam->pid());
     beampt_preRad->set_momentum( true_beam );
     beampt_preRad->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
@@ -108,40 +106,58 @@ int main(int, char const *argv[]) {
     auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {emfslep_pid} );
 
     if ( primary_leptons.size()!=1 ) { // this event had no primary leptons.
-      wrtr->write_event(evt);      // write out events that we don't modify
+      wrtr->write_event(evt);          // write out events that we don't modify
       continue;
     }
 
     auto fslep = primary_leptons.back();
-
     auto fslep_preRad = GetPartFromId(evt, fslep->id());
     fslep_preRad->set_status( MyRadVertexStatus );
+    
+    // Compute Q2 for weight vertex calculation 
+    auto q = beampt->momentum() - fslep->momentum();
+    double vertex_Q2 = -q.m2();
+
+    // Modify outgoing electron kinematics
+    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
+    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
 
     // Store generated photon
     auto out_photon = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
-    HepMC3::FourVector Delta_Photon ( 0,0,0.1,0.1); // random for now 
-    out_photon->set_momentum(Delta_Photon);
-    out_photon->set_pid( kPdgPhoton ); 
-    out_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
-    
-    // Modify outgoing electron kinematics
-    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>( fslep_preRad->data() ); 
-    fslep_postRad->set_momentum(fslep_preRad->momentum()-Delta_Photon);
-    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ; // detected electron
+    out_photon->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
+    out_photon->set_pid(kPdgPhoton);
 
+    // This should all be configurable
+    double thickness = utils::GetCLAS6TargetThickness(tgtpt->pid());
+    double Emin = 0.75 ;
+    double Emax = beampt->momentum().e()+0.02 ;
+    double max_Ephoton = 0.2*beampt->momentum().e();
+    string model = "schwinger";//"motsai";//"vanderhaeghen"; 
+
+    // Compute true detected outgoing electron kinematics with energy loss method
+    double egamma = utils::SIMCEnergyLoss( fslep_preRad->momentum(), fslep_preRad->pid(), tgtpt->pid(), thickness, max_Ephoton ) ;
+    if( egamma < 0 ) egamma = 0 ;
+    HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_preRad->momentum(), egamma ) ;
+    if( OutGamma.e() < 0 )  OutGamma.set(0,0,0,0);
+    out_photon->set_momentum(OutGamma);
+    fslep_postRad->set_momentum( fslep_preRad->momentum() - OutGamma ) ;
+
+    // Add all particles to event record
     evt.add_particle(beampt_preRad);
     evt.add_particle(fslep_postRad);
     evt.add_particle(beam_photon);
     evt.add_particle(out_photon);
 
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = 2;
+    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_Ephoton, model );
+    //std::cout << " evt.weights()[0] " << evt.weights()[0] << std::endl;
 
     wrtr->write_event(evt); // write out events your modified event
 
     // Store in gst output
     StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
+    if( nprocessed > 1000) break; 
   }
   wrtr->close();
   output_tree->Write();
