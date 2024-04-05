@@ -88,7 +88,7 @@ if opts.INFLUX=="" :
     script.write("setup pdfsets v5_9_1b \n")
     script.write("setup gdb v8_1 \n")
     script.write("cd $CONDOR_DIR_INPUT \n")
-    script.write("git clone "+opts.GIT_LOCATION+" -b "+opts.BRANCH+" ;\n")
+    script.write("git clone "+opts.GIT_LOCATION+" ;\n")
     script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; make ;\n")
     #write main command
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --Emin "+str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam)+" --Emax "+str(opts.EnergyBeam+0.02)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
@@ -181,7 +181,7 @@ for x in range(0,len(gst_file_names)):
     script.write("setup gdb v8_1 \n")
     script.write("cd $CONDOR_DIR_INPUT \n")
     script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n")
-    script.write("git clone "+opts.GIT_LOCATION+" -b "+opts.BRANCH+" ;\n")
+    script.write("git clone "+opts.GIT_LOCATION+" ;\n")
     script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; make ;\n")
     #write main command
      script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_"+"e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --target "+str(opts.TARGET)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+"; \n\n")
