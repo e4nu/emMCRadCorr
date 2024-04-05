@@ -6,5 +6,5 @@ This directory contains python scripts used to run jobs at the FNAL grid
 
 Example:
 ```
-python submit_rad_GENIE_gpvm.py --directory /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/TestSubmission --xsec /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/TestSubmission/total_xsec.xml --nevents 1000000
+python submit_rad_GENIE_gpvm.py --directory /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/TestSubmission --xsec /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/TestSubmission/total_xsec.xml --nevents 1000000 --genie-git-location https://github.com/sjgardiner/Generator.git --genie-git-branch hepmc3
 ```

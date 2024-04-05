@@ -94,7 +94,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --Emin "+str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam)+" --Emax "+str(opts.EnergyBeam+0.02)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -187,7 +187,7 @@ for x in range(0,len(gst_file_names)):
     script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
 
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h  --OS=SL7 --mail_on_error file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 
     counter += 1
 
@@ -203,4 +203,4 @@ fnal_script = open( opts.JOBSTD+"/fnal_dag_submit.fnal", 'w' )
 fnal_script.write("#!/bin/bash \n")
 fnal_script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups ;\n")
 fnal_script.write("setup fife_utils ;\n")
-fnal_script.write("jobsub_submit -G "+opts.GROUP+" --OS=SL7 --memory=10GB --disk=10GB --expected-lifetime=25h -N 1 --role=Analysis --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
+fnal_script.write("jobsub_submit -G "+opts.GROUP+" --OS=SL7 --memory=10GB --disk=10GB --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
