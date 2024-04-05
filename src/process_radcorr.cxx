@@ -18,12 +18,43 @@
 using namespace e4nu;
 using namespace utils;
 
-int main(int, char const *argv[]) {
+int main(int argc, char* argv[]) {
 
-  auto rdr = HepMC3::deduce_reader(argv[1]);
+  std::string input_hepmc3_file = "", model = "simc";
+  std::string output_name = "myradevents";
+  double true_EBeam = 2 ; 
+  int target = 1000010010;
+  double thickness = 0, max_egamma = 0.2;
+
+  // process options
+  if( argc > 1 ) { // configure rest of analysis
+    if( utils::ExistArg("input-hepmc3-file",argc,argv)) {
+      input_hepmc3_file = utils::GetArg("input-hepmc3-file",argc,argv); 
+    } else { std::cout << " --input-hepmc3-file is not defined "; return 0 ;}
+    if( utils::ExistArg("output-file",argc,argv)) {
+      output_name = utils::GetArg("output-file",argc,argv); 
+    }
+    if( utils::ExistArg("true-EBeam",argc,argv)){
+      true_EBeam = std::stod(utils::GetArg("true-EBeam",argc,argv));
+    }
+    if( utils::ExistArg("target",argc,argv)){
+      target = std::stoi(utils::GetArg("target",argc,argv));
+    }
+    if( utils::ExistArg("rad-model",argc,argv)){
+      model = utils::GetArg("rad-model",argc,argv);
+    }
+    if( utils::ExistArg("thickness",argc,argv)){
+      thickness = std::stod(utils::GetArg("thickness",argc,argv));
+    } 
+    if( utils::ExistArg("max-egamma",argc,argv)){
+      max_egamma = std::stod(utils::GetArg("max-egamma",argc,argv));
+    }
+  }
+  max_egamma *= true_EBeam;
+
+  auto rdr = HepMC3::deduce_reader(input_hepmc3_file);
   if (!rdr) {
-    std::cout << "Failed to instantiate HepMC3::Reader from " << argv[1]
-              << std::endl;
+    std::cout << "Failed to instantiate HepMC3::Reader from " << input_hepmc3_file << std::endl;
     return 1;
   }
 
@@ -35,7 +66,7 @@ int main(int, char const *argv[]) {
     return 1;
   }
   
-  TFile * output_gst = new TFile("genie.gst.root","RECREATE");
+  TFile * output_gst = new TFile((output_name+".gst.root").c_str(),"RECREATE");
   TTree * output_tree = new TTree("gst","GENIE Summary Event Tree");
   SetGSTBranchAddress( output_tree );
 
@@ -54,9 +85,9 @@ int main(int, char const *argv[]) {
   NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info, part_statuses);
   
   // add link to your paper describing this model to the citation metadata
-  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"2404.12345v3",});
+  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"undefined",});
   
-  auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer(argv[2], out_gen_run_info));
+  auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer((output_name+".hepmc3").c_str(), out_gen_run_info));
   
   // re-open the file so that you start at the beginning
   rdr = HepMC3::deduce_reader(argv[1]);
@@ -80,7 +111,10 @@ int main(int, char const *argv[]) {
       wrtr->write_event(evt); // write out events that we don't modify
       continue;
     }
-    
+
+    if( thickness == 0 ) thickness = utils::GetCLAS6TargetThickness(tgtpt->pid());
+    std::cout << " Target thickness in rad.length = " << thickness << std::endl;
+
     // Events are generated with the radiated flux
     // The original beam is a monocromatic beam of a specific energy, EBeam
     // The correct calculation requires to add back true beam in the event rate
@@ -89,7 +123,7 @@ int main(int, char const *argv[]) {
     
     // Store generated photon
     auto beampt_mono = std::make_shared<HepMC3::GenParticle>(beampt_corr->data()); // Monocromatic beam
-    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration in z direction
+    const HepMC3::FourVector true_beam ( 0,0,true_EBeam,true_EBeam);
     beampt_mono->set_pid(beampt_corr->pid());
     beampt_mono->set_momentum( true_beam );
     beampt_mono->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
@@ -126,14 +160,11 @@ int main(int, char const *argv[]) {
     out_photon->set_pid(kPdgPhoton);
 
     // This should all be configurable
-    double thickness = utils::GetCLAS6TargetThickness(tgtpt->pid());
     double Emin = 0.75 ;
     double Emax = beampt->momentum().e()+0.02 ;
-    double max_Ephoton = 0.2*beampt_mono->momentum().e();
-    string model = "simc";//"vanderhaeghen";//"motsai";//"vanderhaeghen"; 
 
     // Compute true detected outgoing electron kinematics with energy loss method
-    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), fslep_corr->pid(), tgtpt->pid(), thickness, max_Ephoton ) ;
+    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), fslep_corr->pid(), tgtpt->pid(), thickness, max_egamma ) ;
     if( egamma < 0 ) egamma = 0 ;
     HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
     if( OutGamma.e() < 0 )  OutGamma.set(0,0,0,0);
@@ -152,7 +183,7 @@ int main(int, char const *argv[]) {
     double vertex_Q2 = -q.m2();
 
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_Ephoton, "simc" );
+    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, model );
 
     // Store back in hepmc3 format:
     wrtr->write_event(evt); 
