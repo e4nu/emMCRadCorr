@@ -81,18 +81,21 @@ int main(int, char const *argv[]) {
       continue;
     }
     
-    // Add back true beam
-    auto rad_beam = GetPartFromId(evt, beampt->id());
-    rad_beam->set_status( MyRadVertexStatus );
+    // Events are generated with the radiated flux
+    // The original beam is a monocromatic beam of a specific energy, EBeam
+    // The correct calculation requires to add back true beam in the event rate
+    auto beampt_corr = GetPartFromId(evt, beampt->id());
+    beampt_corr->set_status( MyRadVertexStatus ); // This corresponds to the radiated electron (radiated corrected electron)
     
     // Store generated photon
-    auto beampt_preRad = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
-    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration
-    beampt_preRad->set_pid(rad_beam->pid());
-    beampt_preRad->set_momentum( true_beam );
-    beampt_preRad->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
-    
-    auto beam_photon = std::make_shared<HepMC3::GenParticle>(rad_beam->data());
+    auto beampt_mono = std::make_shared<HepMC3::GenParticle>(beampt_corr->data()); // Monocromatic beam
+    const HepMC3::FourVector true_beam ( 0,0,4.325,4.325); // from configuration in z direction
+    beampt_mono->set_pid(beampt_corr->pid());
+    beampt_mono->set_momentum( true_beam );
+    beampt_mono->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
+
+    // We compute the kinematics of the emited photon using the information from the beam and radiated electron:
+    auto beam_photon = std::make_shared<HepMC3::GenParticle>(beampt_corr->data());
     beam_photon->set_momentum( true_beam - beampt->momentum() ) ; 
     beam_photon->set_pid( kPdgPhoton ) ;
     beam_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
@@ -100,30 +103,25 @@ int main(int, char const *argv[]) {
     auto primary_vtx = NuHepMC::Event::GetPrimaryVertex(evt);
     auto emfslep_pid = beampt->pid();
     
-    // grab all primary leptons that were considered 'final state' by the
-    // previous simulation
-    //  might have to adjust for simulations that include lepton FSI already
+    // From the primary vertex, we can get the outgoing electron kinematics before it radiates:
     auto primary_leptons = NuHepMC::Vertex::GetParticlesOut_All(primary_vtx, NuHepMC::ParticleStatus::UndecayedPhysical, {emfslep_pid} );
-
     if ( primary_leptons.size()!=1 ) { // this event had no primary leptons.
-      wrtr->write_event(evt);          // write out events that we don't modify
+      std::cout << "More than one outgoing electron exits. Not stored.."<<std::endl;
       continue;
     }
 
     auto fslep = primary_leptons.back();
-    auto fslep_preRad = GetPartFromId(evt, fslep->id());
-    fslep_preRad->set_status( MyRadVertexStatus );
-    
-    // Compute Q2 for weight vertex calculation 
-    auto q = beampt->momentum() - fslep->momentum();
-    double vertex_Q2 = -q.m2();
+    auto fslep_corr = GetPartFromId(evt, fslep->id());
+    // As it is the outgoing electron at the vertex (before radiation), we give it a different status
+    fslep_corr->set_status( MyRadVertexStatus ); 
 
+    // Now we account for the fact that the outgoing electron might also radiate
     // Modify outgoing electron kinematics
-    auto fslep_postRad = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
-    fslep_postRad->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
+    auto fslep_detected = std::make_shared<HepMC3::GenParticle>(fslep_corr->data());
+    fslep_detected->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
 
-    // Store generated photon
-    auto out_photon = std::make_shared<HepMC3::GenParticle>(fslep_preRad->data());
+    // Store generated photon and alter out.electron kinematics
+    auto out_photon = std::make_shared<HepMC3::GenParticle>(fslep_corr->data());
     out_photon->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
     out_photon->set_pid(kPdgPhoton);
 
@@ -131,33 +129,37 @@ int main(int, char const *argv[]) {
     double thickness = utils::GetCLAS6TargetThickness(tgtpt->pid());
     double Emin = 0.75 ;
     double Emax = beampt->momentum().e()+0.02 ;
-    double max_Ephoton = 0.2*beampt->momentum().e();
-    string model = "schwinger";//"motsai";//"vanderhaeghen"; 
+    double max_Ephoton = 0.2*beampt_mono->momentum().e();
+    string model = "simc";//"vanderhaeghen";//"motsai";//"vanderhaeghen"; 
 
     // Compute true detected outgoing electron kinematics with energy loss method
-    double egamma = utils::SIMCEnergyLoss( fslep_preRad->momentum(), fslep_preRad->pid(), tgtpt->pid(), thickness, max_Ephoton ) ;
+    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), fslep_corr->pid(), tgtpt->pid(), thickness, max_Ephoton ) ;
     if( egamma < 0 ) egamma = 0 ;
-    HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_preRad->momentum(), egamma ) ;
+    HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
     if( OutGamma.e() < 0 )  OutGamma.set(0,0,0,0);
     out_photon->set_momentum(OutGamma);
-    fslep_postRad->set_momentum( fslep_preRad->momentum() - OutGamma ) ;
+    fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
 
     // Add all particles to event record
-    evt.add_particle(beampt_preRad);
-    evt.add_particle(fslep_postRad);
+    evt.add_particle(beampt_mono);
+    evt.add_particle(fslep_detected);
     evt.add_particle(beam_photon);
     evt.add_particle(out_photon);
 
+    // For the weight calculation, we need the true Q2 used for event generation
+    // We compute it with vertex kinematics
+    auto q = beampt_corr->momentum() - fslep_corr->momentum();
+    double vertex_Q2 = -q.m2();
+
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_Ephoton, model );
-    //std::cout << " evt.weights()[0] " << evt.weights()[0] << std::endl;
+    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_Ephoton, "simc" );
 
-    wrtr->write_event(evt); // write out events your modified event
+    // Store back in hepmc3 format:
+    wrtr->write_event(evt); 
 
-    // Store in gst output
+    // Store in GENIE gst output
     StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
-    if( nprocessed > 1000) break; 
   }
   wrtr->close();
   output_tree->Write();

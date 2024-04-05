@@ -107,7 +107,7 @@ double utils::VanderhagenELoss( const double Q2 , const double Ee ) {
 }
 
 double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2, const double thickness, const double max_Ephoton, const std::string model ){
-  double weight = 1; 
+  double weight = 1;
   // Grab beam and outgoing electron (after radiation - detected)
   auto beampt = NuHepMC::Event::GetBeamParticle(evt);
   auto primary_leptons = NuHepMC::Event::GetParticles_All(evt, NuHepMC::ParticleStatus::UndecayedPhysical, {beampt->pid()} );
@@ -122,34 +122,33 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
   unsigned int tgt_pdg = NuHepMC::Event::GetTargetParticle(evt)->pid();
   double Emax = max_Ephoton ; 
   double Emin = 1E-15;
-
-  TF1 * fsp = new TF1("fsp","TMath::Log(1-x)* (1./x)"); // Spence function
-
-  if ( "vanderhaeghen" ) { 
+  double radcorr_cutoff = 0.0001; 
+  if( model == "simple" ) { 
+    // Reference ?
+    weight = 1 + (2*kAem /kPi) * ( (13./12.)* (TMath::Log(true_Q2/pow(kElectronMass,2)) - 1) - (17./36.)
+				   - (1./4.) * pow(TMath::Log(corr_leptons[1]->momentum().e()*fslep->momentum().e()),2)
+				   - (1./2.) * ( (pow(kPi,2)/6) -  TMath::DiLog(TMath::Power(TMath::Cos(0.5*fslep->momentum().theta()),2.)) ) );
+  } else if ( model == "vanderhaeghen" ) { 
     // 10.1103/physrevc.62.025501
     double e_gamma_min = 1E-25;
-    double SP = -1*fsp->Integral(Emin,pow(TMath::Cos(fslep->momentum().theta())/2,2.));
-    double delta = TMath::Log(pow(Emax,2)/(beampt->momentum().e()*fslep->momentum().e()))* (TMath::Log(Q2/pow(kElectronMass,2)) - 1) + 13./9.*TMath::Log(Q2/pow(kElectronMass,2)) ;
+    double DeltaE = 0.01;
+    double delta = (TMath::Log(true_Q2/pow(kElectronMass,2)) - 1) + 13./9.*TMath::Log(true_Q2/pow(kElectronMass,2)) ;
     delta -= ( 29./9. + 0.5 * pow(TMath::Log(beampt->momentum().e()/fslep->momentum().e()),2) + pow(kPi,2)/6.);
-    delta += SP; 
+    delta += TMath::DiLog(pow(TMath::Cos(fslep->momentum().theta())/2,2.));
     delta *= (kAem/kPi);
     weight = 1+delta;
-  } else if ( "schwinger" ) { 
-    // 10.1103/PhysRev.76.790
-    double Delta_E = beampt->momentum().e() - corr_leptons[0]->momentum().e(); // Energy of emitted photon (incoming electron)
-    weight = 1 + (2*kAem / kPi) *( ( TMath::Log( beampt->momentum().p3mod() / Emax ) - (13./12.))* (TMath::Log(Q2/pow(kElectronMass,2)) - 1) + (17./36)); 
-  } else if ( "motsai" ) {
+  } else if ( model == "motsai" ) {
     // 10.1103/RevModPhys.41.205
     // https://inspirehep.net/files/1fcaa81f63f50d7bf56a22ce2c6b8b58 Equation II.2
-    double SP = fsp->Integral(Emin,pow(-TMath::Sin(fslep->momentum().theta())/2,2.));
-    double Fth = TMath::Log(pow(TMath::Sin(fslep->momentum().theta()/2),2.))*TMath::Log(pow(TMath::Cos(fslep->momentum().theta()/2),2.))*SP;
-    double delta = (TMath::Log(beampt->momentum().e()/Emax) - 13./12.) * (TMath::Log(Q2/pow(kElectronMass,2)) - 1) + 17./36. + 0.5*Fth;
+    double SP = TMath::DiLog(-pow(TMath::Sin(fslep->momentum().theta())/2,2.));
+    double Fth = TMath::Log(pow(TMath::Sin(fslep->momentum().theta()/2),2.))*TMath::Log(pow(TMath::Cos(fslep->momentum().theta()/2),2.))-SP;
+    double delta = (13./12.) * (TMath::Log(Q2/pow(kElectronMass,2)) - 1) - 17./36. - 0.5*Fth;
     delta *= - 2*(kAem/kPi);
-    weight = 1 - delta ; 
-  } else if ("simc"){
+    weight = 1 - delta ;
+  } else if ( model == "simc" ){
     // 10.1103/PhysRevC.64.054610
-    double delta_hard = 2.*(kAem/kPi)*(-3./4*TMath::Log(Q2/pow(kElectronMass,2)+1)+5./9.-1./3*TMath::Log(Q2/pow(kElectronMass,2))); 
-    weight = 1 - delta_hard ; 
+    double delta_hard = 2.*(kAem/kPi)*( -13./12.*TMath::Log(true_Q2/pow(kElectronMass,2))+14./9.);
+    weight = 1 - delta_hard ;
   }
 
   return weight ; 

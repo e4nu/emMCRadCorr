@@ -271,7 +271,6 @@ namespace e4nu {
       for(auto const &tool : in_gen_run_info->tools()){
 	if( tool.name == "GENIE") is_GENIE == true ; 
       }
-      is_GENIE == true ; 
       //HepMC3::Print::content(evt);
 
       auto beampt = NuHepMC::Event::GetBeamParticle(evt);
@@ -391,13 +390,14 @@ namespace e4nu {
       static const double kNeutronMass = 0.939565 ;
       double M = (kProtonMass+kNeutronMass)/2.;
       // Compute kinematics with true vertex kinematics
+      // We use the leptons at the vertex to compute the variable W
+      // It corresponds to the true W used for event generation
       auto q = corr_leptons[0]->momentum() - corr_leptons[1]->momentum();
       KineQ2 = -q.m2();
       KineX = 0.5*KineQ2/(M+q.e()) ;
       KineY = q.e()/beampt->momentum().e() ; 
-      KineW = pow(M,2) + 2*M*q.e() - KineQ2 ; 
+      KineW = sqrt( pow(M,2) + 2*M*q.e() - KineQ2 ) ; 
       
-      is_GENIE = true ; 
       if( is_GENIE ) { 
 	// True event information
 	HitQrk=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitQuarkPDG");
