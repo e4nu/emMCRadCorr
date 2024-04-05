@@ -12,10 +12,10 @@ export IFDH_CP_MAXRETRIES=0
 setup pdfsets v5_9_1b 
 setup gdb v8_1 
 
-echo "Setting E4NU environment variables..."
+echo "Setting emMCRadCorr environment variables..."
 
 # Finds the directory where this script is located. This method isn't
 # foolproof. See https://stackoverflow.com/a/246128/4081973 if you need
 # something more robust for edge cases (e.g., you're calling the script using
 # symlinks).
-export E4NUANALYSIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export EMMCRADCORR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

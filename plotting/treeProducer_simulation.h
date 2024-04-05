@@ -24,7 +24,8 @@ TString graphstring = "";
 
 std::string FullInputName = "data/1H_4_325_Data_Plots_FSI_em.root"; 
 //TString file_name = "/genie/app/users/jtenavid/Software/e4v/E4NuAnalysis/Source/e4nuanalysiscode/src/plotting_apps/rad_corr/RadFlux_G18_10a_H_4320MeV.gst.root";
-TString file_name = "/genie/app/users/jtenavid/Software/e4v/E4NuAnalysis/Source/e4nuanalysiscode/radiated.gst.root";
+TString file_name = "/genie/app/users/jtenavid/Software/e4v/E4NuAnalysis/Source/emMCRadCorr/genie.gst.root";
+  ///genie/app/users/jtenavid/Software/e4v/E4NuAnalysis/Source/e4nuanalysiscode/radiated.gst.root";
   //"/pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation/G18_10a_eH_Q2_14_4325_fullrad_simc.gst.root";
 //"/pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/RadiatedNew/UpdatedAdi/Q214/master-routine_validation_01-eScattering/e_on_1000010010_4325MeV_0.gst.root";
   //
