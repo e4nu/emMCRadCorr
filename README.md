@@ -8,5 +8,6 @@ Radiative corrections are included in a number of steps:
 4.  Modify the generator output to account for incoming and outgoing electron radiation
 5.  Use the event kinematics to compute the corresponding radiative cross-section weights
 
-<img width="726" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/8c2acb2e-68c2-465c-8613-b743efd6d3f5">
+<img width="392" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/22829212-84d0-47bb-8067-6d2856da235c">
+
 
