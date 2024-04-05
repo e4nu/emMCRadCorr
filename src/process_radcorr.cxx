@@ -13,7 +13,7 @@
 #include "Utils.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// ./processor_skeleton input_file outputfile                                //
+// process_radcorr.cxx input_file outputfile.hepmc3                          //
 ///////////////////////////////////////////////////////////////////////////////
 using namespace e4nu;
 using namespace utils;

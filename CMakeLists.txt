@@ -15,16 +15,16 @@ set(SOURCES
 
 # Add executable target
 add_executable(radiate_flux src/radiate_flux.cxx ${SOURCES})
-add_executable(processor_skeleton src/processor_skeleton.cxx ${SOURCES})
+add_executable(process_radcorr src/process_radcorr.cxx ${SOURCES})
 
 find_package(ROOT REQUIRED)
 include_directories(${ROOT_INCLUDE_DIRS})
 target_link_libraries(radiate_flux PUBLIC ROOT::Physics)
 target_link_libraries(radiate_flux PUBLIC ROOT::Tree)
 target_link_libraries(radiate_flux PUBLIC ROOT::Hist)
-target_link_libraries(processor_skeleton PUBLIC ROOT::Physics)
-target_link_libraries(processor_skeleton PUBLIC ROOT::Tree)
-target_link_libraries(processor_skeleton PUBLIC ROOT::Hist)
+target_link_libraries(process_radcorr PUBLIC ROOT::Physics)
+target_link_libraries(process_radcorr PUBLIC ROOT::Tree)
+target_link_libraries(process_radcorr PUBLIC ROOT::Hist)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
@@ -35,5 +35,5 @@ CPMAddPackage(
   GIT_REPOSITORY "https://github.com/NuHepMC/cpputils.git"
   OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
 )
-target_link_libraries(processor_skeleton PUBLIC NuHepMC::CPPUtils)
+target_link_libraries(process_radcorr PUBLIC NuHepMC::CPPUtils)
 target_link_libraries(radiate_flux PUBLIC NuHepMC::CPPUtils)
