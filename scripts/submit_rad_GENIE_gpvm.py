@@ -39,13 +39,12 @@ op.add_option("--production", dest="PROD", default="routine_validation", help="P
 op.add_option("--config-dir", dest="CONF", default='', help="Path to GENIE config dir")
 op.add_option("--tune", dest="TUNE",default="G18_10a_00_000",help="Genie model configuration tag. Default %default")
 op.add_option("--xsec", dest="XSEC",default="total_xsec.xml",help="Specify name and location of input xsec file for GENIE event generation. Default %default")
-op.add_option("--nevents",dest="NEVNT",default=100000,help="Number of events to generate, default %default")
-op.add_option("--nmaxevents",dest="NMax",default=400000,help="Max number of events per generation, default %NMax")
+op.add_option("--nevents",dest="NEVNT",default=100000,type="int", help="Number of events to generate, default %default")
+op.add_option("--nmaxevents",dest="NMax",default=400000,type="int", help="Max number of events per generation, default %NMax")
 op.add_option("--event-gen-list",dest="EvGenList",default="EM",help="Event generator list: EM, EMQE, EMMEC, EMRES, EMDIS. Default %default")
 op.add_option("--seed",dest="Seed", default=210921029, help="Set stargint point seed. Default %default")
 op.add_option("--gen-runid", dest="RunID", default=0, help="Set Starting run id. Default %default")
 op.add_option("--gst-output", dest="GSTOutput", default=False, action="store_true",help="Store gst root file.")
-op.add_option("--ghepmc3-output", dest="GHEPMC3Output", default=False, action="store_true",help="Store HEPMC3 output")
 op.add_option("--no-ghep-output", dest="NoGHEPOutput", default=False, action="store_true",help="GHEP GENIE files is removed to reduce memory.")
 
 opts, args = op.parse_args()
@@ -95,7 +94,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --Emin "+str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam)+" --Emax "+str(opts.EnergyBeam+0.02)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/"+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error file://"+opts.JOBSTD+"rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -118,12 +117,13 @@ elif "d" in opts.TUNE:
 command_dict = {}
 grid_setup = os.getenv('GENIE')+'src/scripts/production/python/setup_FNAL.sh' 
 genie_setup= os.getenv('GENIE')+'src/scripts/production/python/setup_GENIE.sh'
-command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.OUTFLUX+",hradflux",str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam),
+command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+opts.OUTFLUX+",hradflux",
+                                                       str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam),
                                                        str(opts.EnergyBeam+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
                                                        opts.Seed, opts.RunID, opts.GSTOutput, opts.NoGHEPOutput,opts.VERSION,
                                                        opts.CONF, opts.ARCH, opts.PROD, opts.CYCLE,"FNAL", opts.GROUP,os.getenv('GENIE_MASTER_DIR'),
                                                        opts.GENIE, opts.JOBSTD,grid_setup,genie_setup,message_thresholds,"4","4","4",opts.BRANCH,
-                                                       opts.GENIE_GIT_LOCATION,configure_INCL,configure_G4,opts.GHEPMC3Output))
+                                                       opts.GENIE_GIT_LOCATION,configure_INCL,configure_G4,True))
 command_list = command_dict[4]
 command_list_next = command_list
 in_serial = False 
@@ -142,6 +142,59 @@ if len(command_list) == 1 : # serial
         for i in range(len(command_list)) : 
             grid.write(command_list[i]+"\n")
             grid.write("</parallel>\n")
+
+# 3 - Process files
+#e_on_1000010010_0.hepmc3
+true_nsubruns = opts.NEVNT*1.0/opts.NMax
+nsubruns = int(round(opts.NEVNT*1.0/opts.NMax))
+if( nsubruns < true_nsubruns ) : nsubruns += 1 
+if opts.NEVNT <= opts.NMax : nsubruns = 1
+number_files = nsubruns
+
+rad_dir = opts.JOBSTD+"/radcorr/"
+if not os.path.exists(rad_dir) : 
+    os.mkdir(rad_dir)
+name_out_file = "rad_corr"
+
+gst_file_names = []
+for i in range(0,number_files):
+    gst_file_names.append("e_on_"+str(opts.TARGET)+"_"+str(i)+".hepmc3")
+
+name_out_file = "rad_corr"
+
+if number_files == 1 :
+    grid.write("<serial>\n")
+else :
+    grid.write("<parallel>\n")
+
+for x in range(0,len(gst_file_names)):
+    
+    if os.path.exists(rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh"):
+        os.remove(rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh")
+    script = open( rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh", 'w' ) 
+
+    script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
+    script.write("setup ifdhc v2_6_6 \n")
+    script.write("export IFDH_CP_MAXRETRIES=0 \n")
+    script.write("setup pdfsets v5_9_1b \n")
+    script.write("setup gdb v8_1 \n")
+    script.write("cd $CONDOR_DIR_INPUT \n")
+    script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n")
+    script.write("git clone "+opts.GIT_LOCATION+" -b "+opts.BRANCH+" ;\n")
+    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; make ;\n")
+    #write main command
+     script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_"+"e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --target "+str(opts.TARGET)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+"; \n\n")
+    script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
+
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h  --OS=SL7 --mail_on_error file://"+rad_dir+name_out_file+"_"+str(x)+".sh \n")
+
+    counter += 1
+
+if number_files == 1 :
+    grid.write("</serial>\n")
+else :
+    grid.write("</parallel>\n")
 
 if os.path.exists(opts.JOBSTD+"/fnal_dag_submit.fnal"):
     os.remove(opts.JOBSTD+"/fnal_dag_submit.fnal")
