@@ -89,10 +89,10 @@ if opts.INFLUX=="" :
     script.write("setup gdb v8_1 \n")
     script.write("cd $CONDOR_DIR_INPUT \n")
     script.write("git clone "+opts.GIT_LOCATION+" ;\n")
-    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; make ;\n")
+    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
     #write main command
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --Emin "+str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam)+" --Emax "+str(opts.EnergyBeam+0.02)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
-    script.write("ifdh cp -D $CONDOR_DIR_INPUT/"+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
+    script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
     grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
@@ -182,7 +182,7 @@ for x in range(0,len(gst_file_names)):
     script.write("cd $CONDOR_DIR_INPUT \n")
     script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n")
     script.write("git clone "+opts.GIT_LOCATION+" ;\n")
-    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; make ;\n")
+    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
     #write main command
     script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
