@@ -13,8 +13,21 @@
 #include "Utils.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// process_radcorr.cxx input_file outputfile.hepmc3                          //
+// process_radcorr.cxx                                                       //
+// --input-hepmc3-file : input MC file in hepmc3 format                      //
+// --output-file : output MC file name, without format type. Def:myradevents //
+// --true-EBeam : true experiment beam energy, monochromatic. Def: 2GeV      //
+// --target : target pdg, Def: 1000010010                                    //
+// --thickness : target thickness in target lenght                           //
+// --rad-model : radiation model, Def: simc                                  //
+// --max-egamma : max % of allowed energy loss relative to EBeam, Def: 0.2   //
+// --resolution : resolution of the photon energy, Def: 0.0001               //
+// --nevents : number of events to process. Def: all                         //
+//                                                                           //
+// Output: modified hepmc3 event record and ROOT gst file in GENIE format    //
+//                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
+
 using namespace e4nu;
 using namespace utils;
 
@@ -24,7 +37,7 @@ int main(int argc, char* argv[]) {
   std::string output_name = "myradevents";
   double true_EBeam = 2 ; 
   int target = 1000010010;
-  double thickness = 0, max_egamma = 0.2;
+  double thickness = 0, max_egamma = 0.2, resolution = 0.0001 ;
   int nevents = -1 ; // all
   // process options
   if( argc > 1 ) { // configure rest of analysis
@@ -40,16 +53,19 @@ int main(int argc, char* argv[]) {
     if( utils::ExistArg("target",argc,argv)){
       target = std::stoi(utils::GetArg("target",argc,argv));
     }
-    if( utils::ExistArg("rad-model",argc,argv)){
-      model = utils::GetArg("rad-model",argc,argv);
-    }
     if( utils::ExistArg("thickness",argc,argv)){
       thickness = std::stod(utils::GetArg("thickness",argc,argv));
     } else { 
       thickness = utils::GetCLAS6TargetThickness(target);
     } 
+    if( utils::ExistArg("rad-model",argc,argv)){
+      model = utils::GetArg("rad-model",argc,argv);
+    }
     if( utils::ExistArg("max-egamma",argc,argv)){
       max_egamma = std::stod(utils::GetArg("max-egamma",argc,argv));
+    }
+    if( utils::ExistArg("resolution",argc,argv)){
+      resolution = std::stod(utils::GetArg("resolution",argc,argv));
     }
     if( utils::ExistArg("nevents",argc,argv)){
       nevents = std::stoi(utils::GetArg("nevents",argc,argv));
@@ -85,15 +101,14 @@ int main(int argc, char* argv[]) {
   // Define ID for radiative corrections that is not used
   int MyRadVertexStatus = 123;
   part_statuses[MyRadVertexStatus] = {"rad lepton", "Radiated corrections"};// radiated leptons
-  part_statuses[124] = {"unrad lepton", "Radiated corrections"}; // electron as produced in the event generator. Need to radiate. Giving it a special status
-  vtx_statuses[MyRadVertexStatus] = {"Radiated Vertex", "Radiated corrections"};
+  vtx_statuses[MyRadVertexStatus] = {"Radiated\nVertex", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
   NuHepMC::GR5::WriteVertexStatusIDDefinitions(out_gen_run_info, vtx_statuses);
   NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info, part_statuses);
   
   // add link to your paper describing this model to the citation metadata
-  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"undefined",});
+  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"Not Yet Available",});
   
   auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer((output_name+".hepmc3").c_str(), out_gen_run_info));
 
@@ -114,8 +129,7 @@ int main(int argc, char* argv[]) {
     auto beampt = NuHepMC::Event::GetBeamParticle(evt);
     auto tgtpt = NuHepMC::Event::GetTargetParticle(evt);
 
-    if (!beampt || !tgtpt) {  // this event didn't have a beam particle or
-                              // target, its an odd one
+    if (!beampt || !tgtpt) {  // this event didn't have a beam particle or target, its an odd one
       wrtr->write_event(evt); // write out events that we don't modify
       continue;
     }
@@ -128,14 +142,14 @@ int main(int argc, char* argv[]) {
     
     // Store generated photon
     auto beampt_mono = std::make_shared<HepMC3::GenParticle>(beampt_corr->data()); // Monocromatic beam
-    const HepMC3::FourVector true_beam ( 0,0,true_EBeam,true_EBeam);
+    const HepMC3::FourVector true_beam ( 0,0,true_EBeam,true_EBeam); 
     beampt_mono->set_pid(beampt_corr->pid());
     beampt_mono->set_momentum( true_beam );
-    beampt_mono->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam 
+    beampt_mono->set_status( NuHepMC::ParticleStatus::IncomingBeam ) ; // This is the true beam - setting back
 
     // We compute the kinematics of the emited photon using the information from the beam and radiated electron:
     auto beam_photon = std::make_shared<HepMC3::GenParticle>(beampt_corr->data());
-    beam_photon->set_momentum( true_beam - beampt->momentum() ) ; 
+    beam_photon->set_momentum( true_beam - beampt->momentum() ) ; // photon emited in the same direction of the beam (peaking approximation)
     beam_photon->set_pid( kPdgPhoton ) ;
     beam_photon->set_status( NuHepMC::ParticleStatus::UndecayedPhysical ) ;
     
@@ -151,7 +165,7 @@ int main(int argc, char* argv[]) {
 
     auto fslep = primary_leptons.back();
     auto fslep_corr = GetPartFromId(evt, fslep->id());
-    // As it is the outgoing electron at the vertex (before radiation), we give it a different status
+    // As it is the outgoing electron at the vertex (before radiation), we give it a different status reflecting that it might to undergo radiation
     fslep_corr->set_status( MyRadVertexStatus ); 
 
     // Now we account for the fact that the outgoing electron might also radiate
@@ -164,36 +178,30 @@ int main(int argc, char* argv[]) {
     out_photon->set_status(NuHepMC::ParticleStatus::UndecayedPhysical) ;
     out_photon->set_pid(kPdgPhoton);
 
-    // This should all be configurable
-    double Emin = 0.75 ;
-    double Emax = beampt->momentum().e()+0.02 ;
-
     // Compute true detected outgoing electron kinematics with energy loss method
-    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), fslep_corr->pid(), tgtpt->pid(), thickness, max_egamma ) ;
-    if( egamma < 0 ) egamma = 0 ;
+    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma ) ;
+    if( egamma < 0 || egamma < resolution ) egamma = 0 ;
     HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
-    if( OutGamma.e() < 0 )  OutGamma.set(0,0,0,0);
+    if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
     out_photon->set_momentum(OutGamma);
     fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
     
-    // Add all particles to event record
+    // Add all particles to event record only if photon emited
     auto lepISIvtx = std::make_shared<HepMC3::GenVertex>();
     lepISIvtx->set_status(MyRadVertexStatus);
     evt.add_vertex(lepISIvtx);
-
+    
     lepISIvtx->add_particle_in(beampt_mono);
-    lepISIvtx->add_particle_out(beam_photon);
     lepISIvtx->add_particle_out(beampt_corr);
-
-    //    primary_vtx->add_particle_in(beampt_corr);
-
+    if( beam_photon->momentum().e() > resolution ) lepISIvtx->add_particle_out(beam_photon);
+ 
     auto lepFSIvtx = std::make_shared<HepMC3::GenVertex>();
     lepFSIvtx->set_status(MyRadVertexStatus);
     evt.add_vertex(lepFSIvtx);
-
+      
     lepFSIvtx->add_particle_in(fslep_corr);
-    lepFSIvtx->add_particle_out(out_photon);
     lepFSIvtx->add_particle_out(fslep_detected);
+    if( out_photon->momentum().e() > resolution ) lepFSIvtx->add_particle_out(out_photon);
 
     // For the weight calculation, we need the true Q2 used for event generation
     // We compute it with vertex kinematics
