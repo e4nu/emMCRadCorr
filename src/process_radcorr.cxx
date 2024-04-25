@@ -45,12 +45,16 @@ int main(int argc, char* argv[]) {
     }
     if( utils::ExistArg("thickness",argc,argv)){
       thickness = std::stod(utils::GetArg("thickness",argc,argv));
+    } else { 
+      thickness = utils::GetCLAS6TargetThickness(target);
     } 
     if( utils::ExistArg("max-egamma",argc,argv)){
       max_egamma = std::stod(utils::GetArg("max-egamma",argc,argv));
     }
   }
   max_egamma *= true_EBeam;
+
+  std::cout << " Configured for " << true_EBeam << " GeV beam, " << target << " target, " << thickness << " of thickness"<<std::endl;
 
   auto rdr = HepMC3::deduce_reader(input_hepmc3_file);
   if (!rdr) {
@@ -80,7 +84,6 @@ int main(int argc, char* argv[]) {
   part_statuses[MyRadVertexStatus] = {"rad_lepton", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
-  
   NuHepMC::GR5::WriteVertexStatusIDDefinitions(out_gen_run_info, vtx_statuses);
   NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info, part_statuses);
   
@@ -88,12 +91,12 @@ int main(int argc, char* argv[]) {
   NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"undefined",});
   
   auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer((output_name+".hepmc3").c_str(), out_gen_run_info));
-  
+
   // re-open the file so that you start at the beginning
-  rdr = HepMC3::deduce_reader(argv[1]);
+  rdr = HepMC3::deduce_reader(input_hepmc3_file);
+
   size_t nprocessed = 0;
   while (true) { // loop while there are events
-    
     rdr->read_event(evt);
     if (rdr->failed()) {
       std::cout << "Reached the end of the file after " << nprocessed
@@ -111,9 +114,6 @@ int main(int argc, char* argv[]) {
       wrtr->write_event(evt); // write out events that we don't modify
       continue;
     }
-
-    if( thickness == 0 ) thickness = utils::GetCLAS6TargetThickness(tgtpt->pid());
-    std::cout << " Target thickness in rad.length = " << thickness << std::endl;
 
     // Events are generated with the radiated flux
     // The original beam is a monocromatic beam of a specific energy, EBeam
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
     if( OutGamma.e() < 0 )  OutGamma.set(0,0,0,0);
     out_photon->set_momentum(OutGamma);
     fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
-
+    
     // Add all particles to event record
     evt.add_particle(beampt_mono);
     evt.add_particle(fslep_detected);
