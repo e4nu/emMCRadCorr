@@ -84,7 +84,9 @@ int main(int argc, char* argv[]) {
 
   // Define ID for radiative corrections that is not used
   int MyRadVertexStatus = 123;
-  part_statuses[MyRadVertexStatus] = {"rad_lepton", "Radiated corrections"};
+  part_statuses[MyRadVertexStatus] = {"rad lepton", "Radiated corrections"};// radiated leptons
+  part_statuses[124] = {"unrad lepton", "Radiated corrections"}; // electron as produced in the event generator. Need to radiate. Giving it a special status
+  vtx_statuses[MyRadVertexStatus] = {"Radiated Vertex", "Radiated corrections"};
 
   out_gen_run_info->tools().push_back(HepMC3::GenRunInfo::ToolInfo{ "emMCRadCorr", "version 1", "Adding radiative corrections to EM interactions"});
   NuHepMC::GR5::WriteVertexStatusIDDefinitions(out_gen_run_info, vtx_statuses);
@@ -175,13 +177,23 @@ int main(int argc, char* argv[]) {
     fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
     
     // Add all particles to event record
+    auto lepISIvtx = std::make_shared<HepMC3::GenVertex>();
+    lepISIvtx->set_status(MyRadVertexStatus);
+    evt.add_vertex(lepISIvtx);
+
+    lepISIvtx->add_particle_in(beampt_mono);
+    lepISIvtx->add_particle_out(beam_photon);
+    lepISIvtx->add_particle_out(beampt_corr);
+
+    //    primary_vtx->add_particle_in(beampt_corr);
+
     auto lepFSIvtx = std::make_shared<HepMC3::GenVertex>();
     lepFSIvtx->set_status(MyRadVertexStatus);
     evt.add_vertex(lepFSIvtx);
-    lepFSIvtx->add_particle_in(beampt_mono);
-    lepFSIvtx->add_particle_out(fslep_detected);
-    lepFSIvtx->add_particle_out(beam_photon);
+
+    lepFSIvtx->add_particle_in(fslep_corr);
     lepFSIvtx->add_particle_out(out_photon);
+    lepFSIvtx->add_particle_out(fslep_detected);
 
     // For the weight calculation, we need the true Q2 used for event generation
     // We compute it with vertex kinematics
