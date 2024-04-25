@@ -48,6 +48,11 @@ python eAScatteringGridSubmitter.py --jobs-topdir <Your_directory_scratch> --tot
 ## Apply full radiative corrections to your generated events
 Up till now, we computed the interaction kinematics at the interaction level, effectively ignoring radiative effects. In order to account for full event kinematics, we must re-store the true monochromatic beam energy, account for bremstrahalung radiation due to the outgoing electron, and weight the cross-section accordingly to account for vertex, vacumm and bremstrahalung corrections. This is accomplished with the ```process_radcorr.cxx``` app. The app loops over the event record and accounts for the effects described above. 
 
+Example:
+```
+./process_radcorr --input-hepmc3-file <name_file.hepmc3> --output-file <final_name.hepmc3> --target <target_pdg> --rad-model "simc" --thickness <thickness> --max-egamma <maxEgamma> 
+```
+
 ## Validation against H(e,e') data
 A number of scripts are available in the plotting folder to compute H(e,e') radiative corrections and compare it to data from JLab. In order to reproduce the validation plot for rad corrections:
 - Run "root script_simulation.C"
