@@ -53,8 +53,8 @@ Example:
 ./process_radcorr --input-hepmc3-file <name_file.hepmc3> --output-file <final_name.hepmc3> --target <target_pdg> --rad-model "simc" --thickness <thickness> --max-egamma <maxEgamma> 
 ```
 
-## Validation against H(e,e') data
-A number of scripts are available in the plotting folder to compute H(e,e') radiative corrections and compare it to data from JLab. In order to reproduce the validation plot for rad corrections:
+## Validation against H(e,e'p) data
+A number of scripts are available in the plotting folder to compute H(e,e'p) radiative corrections and compare it to data from JLab. In order to reproduce the validation plot for rad corrections:
 - Run "root script_simulation.C"
 - Plot with "root ProduceExtDataFig2.cpp"
 Generations must have a Q2 minimum cut of 1.4 GeV^2.
