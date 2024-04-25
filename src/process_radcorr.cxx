@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
   double true_EBeam = 2 ; 
   int target = 1000010010;
   double thickness = 0, max_egamma = 0.2;
-
+  int nevents = -1 ; // all
   // process options
   if( argc > 1 ) { // configure rest of analysis
     if( utils::ExistArg("input-hepmc3-file",argc,argv)) {
@@ -50,6 +50,9 @@ int main(int argc, char* argv[]) {
     } 
     if( utils::ExistArg("max-egamma",argc,argv)){
       max_egamma = std::stod(utils::GetArg("max-egamma",argc,argv));
+    }
+    if( utils::ExistArg("nevents",argc,argv)){
+      nevents = std::stoi(utils::GetArg("nevents",argc,argv));
     }
   }
   max_egamma *= true_EBeam;
@@ -172,10 +175,13 @@ int main(int argc, char* argv[]) {
     fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
     
     // Add all particles to event record
-    evt.add_particle(beampt_mono);
-    evt.add_particle(fslep_detected);
-    evt.add_particle(beam_photon);
-    evt.add_particle(out_photon);
+    auto lepFSIvtx = std::make_shared<HepMC3::GenVertex>();
+    lepFSIvtx->set_status(MyRadVertexStatus);
+    evt.add_vertex(lepFSIvtx);
+    lepFSIvtx->add_particle_in(beampt_mono);
+    lepFSIvtx->add_particle_out(fslep_detected);
+    lepFSIvtx->add_particle_out(beam_photon);
+    lepFSIvtx->add_particle_out(out_photon);
 
     // For the weight calculation, we need the true Q2 used for event generation
     // We compute it with vertex kinematics
@@ -191,6 +197,7 @@ int main(int argc, char* argv[]) {
     // Store in GENIE gst output
     StoreHepMCToGST( evt, output_tree );
     ++nprocessed;
+    if( nevents > 0 && nprocessed > nevents ) break;
   }
   wrtr->close();
   output_tree->Write();
