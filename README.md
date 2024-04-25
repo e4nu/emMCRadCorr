@@ -10,6 +10,17 @@ Radiative corrections are included in a number of steps:
 
 <img width="392" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/22829212-84d0-47bb-8067-6d2856da235c">
 
+## Build software
+In the FNAL farm, 
+```
+source emMCRadCorr_gpvm_env.sh;
+mkdir build ;
+cd build ;
+cmake .. ;
+make ;
+```
+This gives you access to the main apps.
+
 ## Pre-compute electron flux for event generators
 The first step to account for radiative effects is to compute the energy spectra of the real photons emitted by the incoming electron due to internal and external bremsstrahlung emission. 
 Internal bremsstrahlung describes photon emission due to the Coulomb field of the target nuclei, whilst external bremsstrahlung describes photon emission in the field of nuclei other than the one participating in the scattering. We only account for emission due to electron radiation, as radiation due to other particles is negligible.
