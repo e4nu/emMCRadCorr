@@ -62,8 +62,10 @@ A number of scripts are available in the plotting folder to compute H(e,e'p) rad
 Generations must have a Q2 minimum cut of 1.4 GeV^2.
 
 ## Automated scripts
-The steps above require the user to run a number of steps. These have been implemented in a script system optimized for the FNAL farm. The script launches GENIE jobs in parallel using the correct "radiated" electron flux for a given target thickness. The final generated events contain fully radiated information.
-
+The steps above require the user to run a number of steps. These have been implemented in a script system optimized for the FNAL farm. The script launches GENIE jobs in parallel using the correct "radiated" electron flux for a given target thickness. The final generated events contain fully radiated information. An example of the command used to generate the events for the H(e,e'p) validation is:
+```
+python submit_rad_GENIE_gpvm.py --directory /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/Test_newHepMC3_14Q2/ --model vanderhaghen --ebeam-energy 4.325 --xsec /pnfs/genie/scratch/users/jtenavid/GENIE_e4nu_Generations/2024Generation/Test_newHepMC3_14Q2/total_xsec.xml --nevents 100000 --event-gen-list EMQE --tune G18_10a_00_000 --genie-git-branch hepmc3-Q214 --genie-git-location https://github.com/e4nu/Generator-NuHepMC.git --input-radflux /pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation/radflux_H_4325MeV_simc.root
+```
 
 
 
