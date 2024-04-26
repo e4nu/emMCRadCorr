@@ -114,8 +114,8 @@ elif "d" in opts.TUNE:
     configure_G4 = True 
 
 command_dict = {}
-grid_setup = os.getenv('GENIE')+'src/scripts/production/python/setup_FNAL.sh' 
-genie_setup= os.getenv('GENIE')+'src/scripts/production/python/setup_GENIE.sh'
+grid_setup = os.getenv('GENIE')+'/src/scripts/production/python/setup_FNAL.sh' 
+genie_setup= os.getenv('GENIE')+'/src/scripts/production/python/setup_GENIE.sh'
 command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+opts.OUTFLUX+",hradflux",
                                                        str(float(opts.EnergyBeam)-float(opts.MaxEGamma)*float(opts.EnergyBeam) - 0.02),
                                                        str(float(opts.EnergyBeam)+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
