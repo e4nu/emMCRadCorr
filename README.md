@@ -27,7 +27,7 @@ The first step to account for radiative effects is to compute the energy spectra
 Internal bremsstrahlung describes photon emission due to the Coulomb field of the target nuclei, whilst external bremsstrahlung describes photon emission in the field of nuclei other than the one participating in the scattering. We only account for emission due to electron radiation, as radiation due to other particles is negligible.
 
 For instance, one can radiate a 4.32 GeV electron beam on a H CLAS6 target using the following command:
-```./radiate_flux --output-file radflux_H_4325MeV_simc.root --target 1000010010 --Emin 3.4 --Emax 4.35 --ebeam 4.325 --rad-model "simc" --resolution 0.0001```
+```./radiate_flux --output-file radflux_H_4325MeV_simc.root --target 1000010010 --Emin 3.4 --Emax 4.35 --ebeam 4.325 --rad-model "simc" --resolution 0.001```
 Where the model "simc" includes external radiation via the method explained in PhysRevC.64.054610. The expected output is:
 <p align="center">
   <img width="531" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/3f2484e1-bcde-40a6-88c0-3393c7938e4e">
