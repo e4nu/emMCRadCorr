@@ -69,7 +69,7 @@ double utils::SIMCBFactor( const double tgt_pdg ) {
   return b ;
 }
 
-double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt_pdg, const double thickness, const double max_Ephoton ) {
+double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt_pdg, const double thickness, const double max_Ephoton, const double resolution ) {
   // https://journals.aps.org/prc/abstract/10.1103/PhysRevC.64.054610
   double b = SIMCBFactor( tgt_pdg );
   double lambda = TMath::Log(4*pow(particle.p3mod(),2)/pow(kElectronMass,2)) - 1 ;
@@ -79,7 +79,7 @@ double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt
   if( lambda < 0 ) return 0; 
 
   double e_gamma_max = max_Ephoton;
-  double e_gamma_min = 1E-25;
+  double e_gamma_min = resolution ;
   double power_hi = pow(e_gamma_max,lambda);
   double power_lo  = pow(e_gamma_min,lambda);
   TF1 *f = new TF1("f","[0]*pow(x,[0]-1)/[1]",e_gamma_min,e_gamma_max);
@@ -91,11 +91,11 @@ double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt
   return energyLoss ; 
 }
 
-double utils::VanderhagenELoss( const double Q2 , const double Ee ) {
+double utils::VanderhagenELoss( const double Q2 , const double Ee, const double resolution ) {
   // http://dx.doi.org/10.1103/PhysRevC.62.025501
   // Depends on event kinematics - not used
   // For QEL interactions, we can estiamte Q2. Similar results are obtaiend when using SIMC in this case
-  double e_gamma_min = 1E-25;
+  double e_gamma_min = resolution ;
   double e_gamma_max = 0.2*Ee ;
   TF1 *f = new TF1("f","([0]/x)*TMath::Power(x/[1],[0])",e_gamma_min,e_gamma_max);
   double a = (kAem/kPi)*(TMath::Log(Q2)/pow(kElectronMass,2) - 1.);

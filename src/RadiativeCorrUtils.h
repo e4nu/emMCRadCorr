@@ -20,8 +20,8 @@ namespace e4nu {
     double SIMCBFactor( const double tgt_pdg ) ;
 
     // Energy loss probability functions
-    double SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt_pdg, const double thickness, const double max_Ephoton ) ;
-    double VanderhagenELoss( const double Q2 , const double Ee ) ;
+    double SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt_pdg, const double thickness, const double max_Ephoton, const double resolution ) ;
+    double VanderhagenELoss( const double Q2 , const double Ee, const double resolution ) ;
 
     // Weight calculators for cros section
     double RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2, const double thickness, const double max_Ephoton, const double Delta_E, const std::string model );

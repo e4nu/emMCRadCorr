@@ -72,7 +72,8 @@ int main( int argc, char* argv[] ) {
   HepMC3::FourVector V4_beam(0,0,EBeam,EBeam);
   unsigned int nentries = 100000; 
   for( unsigned int i = 0 ; i < nentries ; ++i ) { 
-    double egamma = SIMCEnergyLoss( V4_beam, tgt, thickness, MaxEPhoton ) ;
+    double egamma = SIMCEnergyLoss( V4_beam, tgt, thickness, MaxEPhoton, resolution ) ;
+    if( egamma < 0 || egamma < resolution ) egamma = 0 ;
     double Ee = EBeam - egamma ;
     hradflux -> Fill( Ee ) ; 
   }

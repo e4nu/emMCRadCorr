@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     out_photon->set_pid(kPdgPhoton);
 
     // Compute true detected outgoing electron kinematics with energy loss method
-    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma ) ;
+    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, resolution ) ;
     if( egamma < 0 || egamma < resolution ) egamma = 0 ;
     HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
     if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
