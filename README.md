@@ -7,8 +7,9 @@ Radiative corrections are included in a number of steps:
 3.  Generate electron-scattering events on the target of interest
 4.  Modify the generator output to account for incoming and outgoing electron radiation
 5.  Use the event kinematics to compute the corresponding radiative cross-section weights
-
+<p align="center">
 <img width="392" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/22829212-84d0-47bb-8067-6d2856da235c">
+</p>
 
 ## Build software
 In the FNAL farm, 
@@ -26,10 +27,11 @@ The first step to account for radiative effects is to compute the energy spectra
 Internal bremsstrahlung describes photon emission due to the Coulomb field of the target nuclei, whilst external bremsstrahlung describes photon emission in the field of nuclei other than the one participating in the scattering. We only account for emission due to electron radiation, as radiation due to other particles is negligible.
 
 For instance, one can radiate a 4.32 GeV electron beam on a H CLAS6 target using the following command:
-```./radiate_flux --output-file radflux_H_4325MeV_simc.root --target 1000010010 --Emin 3.4 --Emax 4.35 --ebeam 4.325 --rad-model "simc" --resolution 0.0001```
+```./radiate_flux --output-file radflux_H_4325MeV_simc.root --target 1000010010 --Emin 3.4 --Emax 4.35 --ebeam 4.325 --rad-model "simc" --resolution 0.001```
 Where the model "simc" includes external radiation via the method explained in PhysRevC.64.054610. The expected output is:
-<img width="531" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/3f2484e1-bcde-40a6-88c0-3393c7938e4e">
-
+<p align="center">
+  <img width="531" alt="image" src="https://github.com/e4nu/emMCRadCorr/assets/36236227/3f2484e1-bcde-40a6-88c0-3393c7938e4e">
+</p>
 It is stored in the radflux_H_4325MeV.root as hradflux. For bookkeeping, the standard fluxes with high precision are computed and stored here: ```/pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation```:
 - radflux_C_1161MeV.root
 - radflux_C_2261MeV.root
