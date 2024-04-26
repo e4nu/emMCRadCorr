@@ -69,7 +69,7 @@ double utils::SIMCBFactor( const double tgt_pdg ) {
   return b ;
 }
 
-double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const int p_pdg, const double tgt_pdg, const double thickness, const double max_Ephoton ) {
+double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt_pdg, const double thickness, const double max_Ephoton ) {
   // https://journals.aps.org/prc/abstract/10.1103/PhysRevC.64.054610
   double b = SIMCBFactor( tgt_pdg );
   double lambda = TMath::Log(4*pow(particle.p3mod(),2)/pow(kElectronMass,2)) - 1 ;
@@ -106,7 +106,7 @@ double utils::VanderhagenELoss( const double Q2 , const double Ee ) {
   return energyLoss ; 
 }
 
-double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2, const double thickness, const double max_Ephoton, const std::string model ){
+double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2, const double thickness, const double max_Ephoton, const double Delta_E, const std::string model ){
   double weight = 1;
   // Grab beam and outgoing electron (after radiation - detected)
   auto beampt = NuHepMC::Event::GetBeamParticle(evt);
@@ -123,33 +123,35 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
   double Emax = max_Ephoton ; 
   double Emin = 1E-15;
   double radcorr_cutoff = 0.0001; 
-  if( model == "simple" ) { 
-    // Reference ?
-    weight = 1 + (2*kAem /kPi) * ( (13./12.)* (TMath::Log(true_Q2/pow(kElectronMass,2)) - 1) - (17./36.)
-				   - (1./4.) * pow(TMath::Log(corr_leptons[1]->momentum().e()*fslep->momentum().e()),2)
-				   - (1./2.) * ( (pow(kPi,2)/6) -  TMath::DiLog(TMath::Power(TMath::Cos(0.5*fslep->momentum().theta()),2.)) ) );
-  } else if ( model == "vanderhaeghen" ) { 
+  double delta = 0 ;
+  
+  if ( model == "vanderhaghen" ) { 
     // 10.1103/physrevc.62.025501
     double e_gamma_min = 1E-25;
-    double DeltaE = 0.01;
-    double delta = (TMath::Log(true_Q2/pow(kElectronMass,2)) - 1) + 13./9.*TMath::Log(true_Q2/pow(kElectronMass,2)) ;
-    delta -= ( 29./9. + 0.5 * pow(TMath::Log(beampt->momentum().e()/fslep->momentum().e()),2) + pow(kPi,2)/6.);
-    delta += TMath::DiLog(pow(TMath::Cos(fslep->momentum().theta())/2,2.));
-    delta *= (kAem/kPi);
-    weight = 1+delta;
+    double lnQm  = TMath::Log(true_Q2/pow(kElectronMass,2)) ;
+    double delta_vac = 2./3. * ( 5./3. - lnQm )  ;
+    double delta_vertex = - 3./2. * lnQm + 2 + 0.5 * pow( lnQm, 2. ) + pow(kPi,2)/6. ; 
+    double delta_soft = TMath::Log( beampt->momentum().e()*fslep->momentum().e()/ pow(Delta_E,2)) * ( lnQm - 1 ) ;
+    delta_soft += 0.5 * pow( TMath::Log( beampt->momentum().e()/fslep->momentum().e() ),2 ) ;
+    delta_soft -= 0.5 * pow( lnQm,2) - pow(kPi,2)/3. + TMath::DiLog(pow(TMath::Cos(fslep->momentum().theta())/2,2.));
+    delta = (kAem/kPi) * ( delta_vac + delta_vertex + delta_soft ) ; 
   } else if ( model == "motsai" ) {
     // 10.1103/RevModPhys.41.205
     // https://inspirehep.net/files/1fcaa81f63f50d7bf56a22ce2c6b8b58 Equation II.2
     double SP = TMath::DiLog(-pow(TMath::Sin(fslep->momentum().theta())/2,2.));
     double Fth = TMath::Log(pow(TMath::Sin(fslep->momentum().theta()/2),2.))*TMath::Log(pow(TMath::Cos(fslep->momentum().theta()/2),2.))-SP;
-    double delta = (13./12.) * (TMath::Log(Q2/pow(kElectronMass,2)) - 1) - 17./36. - 0.5*Fth;
-    delta *= - 2*(kAem/kPi);
-    weight = 1 - delta ;
+    delta = ( TMath::Log( beampt->momentum().e() / Delta_E ) - (13./12.)) * (TMath::Log(Q2/pow(kElectronMass,2)) - 1) + 17./36. + 0.5*Fth;
+    delta *= 2*(kAem/kPi);
   } else if ( model == "simc" ){
     // 10.1103/PhysRevC.64.054610
-    double delta_hard = 2.*(kAem/kPi)*( -13./12.*TMath::Log(true_Q2/pow(kElectronMass,2))+14./9.);
-    weight = 1 - delta_hard ;
+    delta = 2.*(kAem/kPi)*( -13./12.*TMath::Log(true_Q2/pow(kElectronMass,2))+14./9.);
+    double lnQm  = TMath::Log(true_Q2/pow(kElectronMass,2)) ;
+    double delta_vac = 1./3./kPi * ( - 5./3. + lnQm )  ;
+    double delta_hard = 2 * kAem * ( -3./4./kPi * lnQm + 1./kPi - delta_vac ) ; 
+    double delta_soft = kAem / kPi * TMath::Log( beampt->momentum().e()*fslep->momentum().e()/ pow(Delta_E,2))*( lnQm - 1 ); 
+    delta = delta_hard + delta_soft ; 
   }
-
+  weight = 1 - delta ; 
+  
   return weight ; 
 }

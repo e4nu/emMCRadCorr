@@ -25,10 +25,9 @@ op.add_option("--model", dest="MODEL", default="simc", help="Rad corr model to u
 op.add_option("--target", dest="TARGET", default=1000010010, help="Target used for calculation. Default %default")
 op.add_option("--thickness", dest="THICKNESS", default="0", help="Thickness. Specify for your experiment")
 op.add_option("--MaxEGamma", dest="MaxEGamma", default=0.2,help="Maximum energy for the emited photons. Default %default*EnergyBeam")
-op.add_option("--eResolution", dest="ERES", default=0.0001,help="Experimental electron energy resolution. Default %default")
+op.add_option("--eResolution", dest="ERES", default=0.001,help="Experimental electron energy resolution. Default %default")
 op.add_option("--output-radflux", dest="OUTFLUX", default="rad_flux.root",help="Name of output ROOT file containing decayed electron flux. Default %default")
 op.add_option("--input-radflux", dest="INFLUX", default="",help="Name of INPUT ROOT file containing decayed electron flux. OPTIONAL argument")
-## GENIE SPECIFIC OPTIONS
 op.add_option("--genie-topdir", dest="GENIE", default=os.getenv('GENIE'), help = "GENIE topdir: %default")
 op.add_option("--genie-version", dest="VERSION", default="master", help="Genie version. Default: %default")
 op.add_option("--genie-git-location", dest="GENIE_GIT_LOCATION", default="https://github.com/GENIE-MC/Generator", help="Github location from where to get the GENIE Generator code. Defaulted to %default")
@@ -91,7 +90,7 @@ if opts.INFLUX=="" :
     script.write("git clone "+opts.GIT_LOCATION+" ;\n")
     script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
     #write main command
-    script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --Emin "+str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam)+" --Emax "+str(opts.EnergyBeam+0.02)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
+    script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
     grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
@@ -118,8 +117,8 @@ command_dict = {}
 grid_setup = os.getenv('GENIE')+'src/scripts/production/python/setup_FNAL.sh' 
 genie_setup= os.getenv('GENIE')+'src/scripts/production/python/setup_GENIE.sh'
 command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+opts.OUTFLUX+",hradflux",
-                                                       str(opts.EnergyBeam-opts.MaxEGamma*opts.EnergyBeam),
-                                                       str(opts.EnergyBeam+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
+                                                       str(float(opts.EnergyBeam)-float(opts.MaxEGamma)*float(opts.EnergyBeam) - 0.02),
+                                                       str(float(opts.EnergyBeam)+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
                                                        opts.Seed, opts.RunID, opts.GSTOutput, opts.NoGHEPOutput,opts.VERSION,
                                                        opts.CONF, opts.ARCH, opts.PROD, opts.CYCLE,"FNAL", opts.GROUP,os.getenv('GENIE_MASTER_DIR'),
                                                        opts.GENIE, opts.JOBSTD,grid_setup,genie_setup,message_thresholds,"4","4","4",opts.BRANCH,
@@ -184,8 +183,9 @@ for x in range(0,len(gst_file_names)):
     script.write("git clone "+opts.GIT_LOCATION+" ;\n")
     script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
     #write main command
-    script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+"; \n\n")
+    script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+" --resolution "+str(opts.ERES)+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
+    script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
     grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 

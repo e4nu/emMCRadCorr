@@ -19,9 +19,9 @@
 // --true-EBeam : true experiment beam energy, monochromatic. Def: 2GeV      //
 // --target : target pdg, Def: 1000010010                                    //
 // --thickness : target thickness in target lenght                           //
-// --rad-model : radiation model, Def: simc                                  //
+// --rad-model : radiation model, Def: vanderhaghen                          //
 // --max-egamma : max % of allowed energy loss relative to EBeam, Def: 0.2   //
-// --resolution : resolution of the photon energy, Def: 0.0001               //
+// --resolution : resolution of the photon energy, Def: 0.001                //
 // --nevents : number of events to process. Def: all                         //
 //                                                                           //
 // Output: modified hepmc3 event record and ROOT gst file in GENIE format    //
@@ -33,11 +33,11 @@ using namespace utils;
 
 int main(int argc, char* argv[]) {
 
-  std::string input_hepmc3_file = "", model = "simc";
+  std::string input_hepmc3_file = "", model = "vanderhaghen";
   std::string output_name = "myradevents";
   double true_EBeam = 2 ; 
   int target = 1000010010;
-  double thickness = 0, max_egamma = 0.2, resolution = 0.0001 ;
+  double thickness = 0, max_egamma = 0.2, resolution = 0.001 ;
   int nevents = -1 ; // all
   // process options
   if( argc > 1 ) { // configure rest of analysis
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
     double vertex_Q2 = -q.m2();
 
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, model );
+    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, resolution, model );
 
     // Store back in hepmc3 format:
     wrtr->write_event(evt); 
