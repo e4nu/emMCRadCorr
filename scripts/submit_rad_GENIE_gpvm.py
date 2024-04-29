@@ -116,12 +116,19 @@ elif "d" in opts.TUNE:
 command_dict = {}
 grid_setup = os.getenv('GENIE')+'/src/scripts/production/python/setup_FNAL.sh' 
 genie_setup= os.getenv('GENIE')+'/src/scripts/production/python/setup_GENIE.sh'
-command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+opts.OUTFLUX+",hradflux",
+if os.path.exists(opts.JOBSTD+"/setup_FNAL.sh") :
+    os.remove(opts.JOBSTD+"/setup_FNAL.sh")
+if os.path.exists(opts.JOBSTD+"/setup_GENIE.sh") :
+    os.remove(opts.JOBSTD+"/setup_GENIE.sh")
+os.system('cp '+grid_setup+' '+opts.JOBSTD )
+os.system('cp '+genie_setup+' '+opts.JOBSTD )
+command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+"/"+opts.OUTFLUX+",hradflux",
                                                        str(float(opts.EnergyBeam)-float(opts.MaxEGamma)*float(opts.EnergyBeam) - 0.02),
                                                        str(float(opts.EnergyBeam)+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
                                                        opts.Seed, opts.RunID, opts.GSTOutput, opts.NoGHEPOutput,opts.VERSION,
                                                        opts.CONF, opts.ARCH, opts.PROD, opts.CYCLE,"FNAL", opts.GROUP,os.getenv('GENIE_MASTER_DIR'),
-                                                       opts.GENIE, opts.JOBSTD,grid_setup,genie_setup,message_thresholds,"4","4GB","4GB",opts.BRANCH,
+                                                       opts.GENIE, opts.JOBSTD,opts.JOBSTD+"/setup_FNAL.sh",opts.JOBSTD+"/setup_GENIE.sh",
+                                                       message_thresholds,"4","4GB","4GB",opts.BRANCH,
                                                        opts.GENIE_GIT_LOCATION,configure_INCL,configure_G4,True))
 command_list = command_dict[4]
 command_list_next = command_list
