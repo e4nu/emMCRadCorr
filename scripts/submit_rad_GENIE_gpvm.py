@@ -121,7 +121,7 @@ command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opt
                                                        str(float(opts.EnergyBeam)+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
                                                        opts.Seed, opts.RunID, opts.GSTOutput, opts.NoGHEPOutput,opts.VERSION,
                                                        opts.CONF, opts.ARCH, opts.PROD, opts.CYCLE,"FNAL", opts.GROUP,os.getenv('GENIE_MASTER_DIR'),
-                                                       opts.GENIE, opts.JOBSTD,grid_setup,genie_setup,message_thresholds,"4","4","4",opts.BRANCH,
+                                                       opts.GENIE, opts.JOBSTD,grid_setup,genie_setup,message_thresholds,"4","4GB","4GB",opts.BRANCH,
                                                        opts.GENIE_GIT_LOCATION,configure_INCL,configure_G4,True))
 command_list = command_dict[4]
 command_list_next = command_list
