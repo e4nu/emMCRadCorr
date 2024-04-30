@@ -34,6 +34,7 @@ CPMAddPackage(
   GIT_TAG main
   GIT_REPOSITORY "https://github.com/NuHepMC/cpputils.git"
   OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
+  OPTIONS "HEPMC3_ENABLE_ROOTIO OFF"
 )
 target_link_libraries(process_radcorr PUBLIC NuHepMC::CPPUtils)
 target_link_libraries(radiate_flux PUBLIC NuHepMC::CPPUtils)
