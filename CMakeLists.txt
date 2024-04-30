@@ -35,6 +35,7 @@ CPMAddPackage(
   GIT_REPOSITORY "https://github.com/NuHepMC/cpputils.git"
   OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
   OPTIONS "HEPMC3_ENABLE_ROOTIO OFF"
+  OPTIONS "CMAKE_CXX_STANDARD 17"
 )
 target_link_libraries(process_radcorr PUBLIC NuHepMC::CPPUtils)
 target_link_libraries(radiate_flux PUBLIC NuHepMC::CPPUtils)
