@@ -13,9 +13,13 @@ GENIE = os.environ.get('GENIE')
 if GENIE:
     sys.path.append(GENIE+"/src/scripts/production/python/xsec_splines")
     sys.path.append(GENIE+"/src/scripts/production/python/event_generation/")
+else : 
+    print(" GENIE env.variable path not defined. It is needed to access submission files for GENIE, exiting...")
+    exit()
 import eFluxScatteringGenCommands as eAFlux
 
 op = optparse.OptionParser(usage=__doc__)
+op.add_option("--git-tarball-location", dest="GIT_TAR", help="Built emMCRadCorr tarball code location. If it is a directory it compresses it.")
 op.add_option("--git-location", dest="GIT_LOCATION", default="https://github.com/e4nu/emMCRadCorr.git", help="emMCRadCorr code location in github. Defaulted to %default")
 op.add_option("--git-branch", dest="BRANCH", default="master", help="Branch name. Default: %default")
 op.add_option("--gpvm-group", dest="GROUP", default="genie", help="Group in the gpvm assigned to your user")
@@ -58,6 +62,23 @@ os.system("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup"
 if opts.BRANCH: 
     print( ' Cloning emMCRadCorr ' + opts.BRANCH ) 
 
+# Create tar ball
+if os.path.isdir(opts.GIT_TAR) : 
+    print("compressing directory...\n")
+    if os.path.exists(opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2") :
+        os.remove(opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2")
+    # Create tar ball 
+    os.system("tar -cjf "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+opts.GIT_TAR)
+    print ( " Compressed the directory successfully")
+
+else : 
+    # check if tar ball exists - if not exit code
+    if os.path.exists(opts.GIT_TAR) :
+        print (" using "+opts.GIT_TAR+"for production")
+    else : 
+        print ( " Exit - user did not indicate location of tarball" )
+        exit()
+
 # Configure grid
 EMRADCORRCODE=os.getenv('EMMCRADCORR')
 emMCRadCorr_setup_file = EMRADCORRCODE+'/emMCRadCorr_gpvm_env.sh'
@@ -93,7 +114,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -182,16 +203,20 @@ for x in range(0,len(gst_file_names)):
     script.write("#!/bin/bash \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
     script.write("cd $CONDOR_DIR_INPUT ;\n")
-    script.write("git clone "+opts.GIT_LOCATION+" ;\n")
-    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
-    script.write("cd $CONDOR_DIR_INPUT ;\n")
-    script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n")
+    script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n") 
+    script.write("cd $INPUT_TAR_DIR_LOCAL; bzip2 -dk "+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+";tar -xvf "+(os.path.split(opts.GIT_TAR)[1]).strip("bz2")+";\n")
+    script.write("cd $INPUT_TAR_DIR_LOCAL/emMCRadCorr/ ;\n")
+    script.write("source emMCRadCorr_gpvm_env.sh ;\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib):${LD_LIBRARY_PATH};\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib64):${LD_LIBRARY_PATH};\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; cd build;\n")
+ 
     #write main command
     script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+" --resolution "+str(opts.ERES)+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h  --OS=SL7 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name dropbox://"+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 
     counter += 1
 
@@ -207,4 +232,4 @@ fnal_script = open( opts.JOBSTD+"/fnal_dag_submit.fnal", 'w' )
 fnal_script.write("#!/bin/bash \n")
 fnal_script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups ;\n")
 fnal_script.write("setup fife_utils ;\n")
-fnal_script.write("jobsub_submit -G "+opts.GROUP+" --OS=SL7 --memory=10GB --disk=10GB --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
+fnal_script.write("jobsub_submit --memory=10GB --disk=10GB -G "+opts.GROUP+" --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
