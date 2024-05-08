@@ -115,7 +115,7 @@ if opts.INFLUX=="" :
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
     grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
-    grid.write("<serial>\n")
+    grid.write("</serial>\n")
 
 # 2 - Run GENIE jobs on grid
 if not os.path.exists(opts.XSEC):
