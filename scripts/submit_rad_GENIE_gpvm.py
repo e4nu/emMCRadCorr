@@ -102,19 +102,19 @@ if opts.INFLUX=="" :
 
     script = open( opts.JOBSTD+"/rad_flux.sh", 'w' ) 
     script.write("#!/bin/bash \n")
-    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
-    script.write("setup ifdhc v2_6_6 \n")
-    script.write("export IFDH_CP_MAXRETRIES=0 \n")
-    script.write("setup pdfsets v5_9_1b \n")
-    script.write("setup gdb v8_1 \n")
-    script.write("cd $CONDOR_DIR_INPUT \n")
-    script.write("git clone "+opts.GIT_LOCATION+" ;\n")
-    script.write("cd emMCRadCorr ; source emMCRadCorr_gpvm_env.sh ; mkdir build; cd build; cmake ..; make ;\n")
+    script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
+    script.write("cd $INPUT_TAR_DIR_LOCAL; bzip2 -dk "+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+";tar -xvf "+(os.path.split(opts.GIT_TAR)[1]).strip("bz2")+";\n")
+    script.write("cd $INPUT_TAR_DIR_LOCAL/emMCRadCorr/ ;\n")
+    script.write("source emMCRadCorr_gpvm_env.sh ;\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib):${LD_LIBRARY_PATH};\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib64):${LD_LIBRARY_PATH};\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; cd build;\n")
+
     #write main command
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h  --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name dropbox://"+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
 
 # 2 - Run GENIE jobs on grid
