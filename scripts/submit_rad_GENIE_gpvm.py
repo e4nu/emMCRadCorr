@@ -114,7 +114,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name dropbox://"+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("<serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -216,7 +216,7 @@ for x in range(0,len(gst_file_names)):
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name dropbox://"+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 
     counter += 1
 
