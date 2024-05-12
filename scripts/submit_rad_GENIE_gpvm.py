@@ -119,7 +119,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("</serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -224,7 +224,7 @@ for x in range(0,len(gst_file_names)):
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 
     counter += 1
 
@@ -240,4 +240,4 @@ fnal_script = open( opts.JOBSTD+"/fnal_dag_submit.fnal", 'w' )
 fnal_script.write("#!/bin/bash \n")
 fnal_script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups ;\n")
 fnal_script.write("setup fife_utils ;\n")
-fnal_script.write("jobsub_submit --memory=10GB --disk=10GB -G "+opts.GROUP+" --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
+fnal_script.write("jobsub_submit --memory=10GB --disk=10GB -G "+opts.GROUP+" --OS=SL7 --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
