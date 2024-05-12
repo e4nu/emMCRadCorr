@@ -102,6 +102,8 @@ if opts.INFLUX=="" :
 
     script = open( opts.JOBSTD+"/rad_flux.sh", 'w' ) 
     script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
+    script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
     script.write("cd $INPUT_TAR_DIR_LOCAL; bzip2 -dk "+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+";tar -xvf "+(os.path.split(opts.GIT_TAR)[1]).strip("bz2")+".tar ;\n")
     script.write("cd $INPUT_TAR_DIR_LOCAL/emMCRadCorr/ ;\n")
@@ -114,7 +116,7 @@ if opts.INFLUX=="" :
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=1GB --disk=1GB --expected-lifetime=1h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("</serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -143,6 +145,7 @@ if os.path.exists(opts.JOBSTD+"/setup_GENIE.sh") :
     os.remove(opts.JOBSTD+"/setup_GENIE.sh")
 os.system('cp '+grid_setup+' '+opts.JOBSTD )
 os.system('cp '+genie_setup+' '+opts.JOBSTD )
+
 command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opts.JOBSTD+"/"+opts.OUTFLUX+",hradflux",
                                                        str(float(opts.EnergyBeam)-float(opts.MaxEGamma)*float(opts.EnergyBeam) - 0.02),
                                                        str(float(opts.EnergyBeam)+0.02),opts.XSEC,opts.NEVNT,opts.TUNE, opts.EvGenList, opts.NMax, 
@@ -201,6 +204,8 @@ for x in range(0,len(gst_file_names)):
     script = open( rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh", 'w' ) 
 
     script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
+    script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
     script.write("cd $CONDOR_DIR_INPUT ;\n")
     script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n") 
