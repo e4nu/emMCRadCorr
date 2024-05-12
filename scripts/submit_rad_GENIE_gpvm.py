@@ -47,7 +47,7 @@ op.add_option("--nmaxevents",dest="NMax",default=400000,type="int", help="Max nu
 op.add_option("--event-gen-list",dest="EvGenList",default="EM",help="Event generator list: EM, EMQE, EMMEC, EMRES, EMDIS. Default %default")
 op.add_option("--seed",dest="Seed", default=210921029, help="Set stargint point seed. Default %default")
 op.add_option("--gen-runid", dest="RunID", default=0, help="Set Starting run id. Default %default")
-op.add_option("--gst-output", dest="GSTOutput", default=False, action="store_true",help="Store gst root file.")
+op.add_option("--gst-output", dest="GSTOutput", default=True, action="store_true",help="Store gst root file.")
 op.add_option("--no-ghep-output", dest="NoGHEPOutput", default=False, action="store_true",help="GHEP GENIE files is removed to reduce memory.")
 
 opts, args = op.parse_args()
