@@ -79,7 +79,7 @@ double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt
   if( lambda < 0 ) return 0; 
 
   double e_gamma_max = max_Ephoton;
-  double e_gamma_min = resolution ;
+  double e_gamma_min = 1E-25;;//resolution ;
   double power_hi = pow(e_gamma_max,lambda);
   double power_lo  = pow(e_gamma_min,lambda);
   TF1 *f = new TF1("f","[0]*pow(x,[0]-1)/[1]",e_gamma_min,e_gamma_max);

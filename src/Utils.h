@@ -319,8 +319,8 @@ namespace e4nu {
 	  else if( scatt_type == 10 ) IsMec = true ;
 	  else if( scatt_type == 11 ) IsCharmPro = true ;
 	  
-	  XSec = = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.XSec");
-	  DiffXSec = = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.DiffXSec");
+	  XSec = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.XSec");
+	  DXSec = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.DiffXSec");
 	}
       }
       
