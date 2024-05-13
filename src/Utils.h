@@ -269,7 +269,7 @@ namespace e4nu {
       auto in_gen_run_info = evt.run_info();
       bool is_GENIE = false ;
       for(auto const &tool : in_gen_run_info->tools()){
-	if( tool.name == "GENIE") is_GENIE == true ; 
+	if( tool.name == "GENIE") is_GENIE = true ; 
       }
       //HepMC3::Print::content(evt);
 
@@ -318,6 +318,9 @@ namespace e4nu {
 	  else if( scatt_type == 9 ) IsAMNuGamma = true ;
 	  else if( scatt_type == 10 ) IsMec = true ;
 	  else if( scatt_type == 11 ) IsCharmPro = true ;
+	  
+	  XSec = = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.XSec");
+	  DiffXSec = = NuHepMC::CheckedAttributeValue<double>(&evt,"GENIE.DiffXSec");
 	}
       }
       
@@ -380,9 +383,9 @@ namespace e4nu {
 	  Pzf[i] = final_parts[i]->momentum().pz();
 	  Pf[i] = final_parts[i]->momentum().p3mod();
 	  Costhf[i] = cos(final_parts[i]->momentum().theta());
-	  if( is_GENIE ) { 
-	    Resc[i]=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.RescatterCode");
-	  }
+	  //	  if( is_GENIE ) { 
+	  //  Resc[i]=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.RescatterCode");
+	  // }
 	}
       }
       
@@ -398,6 +401,7 @@ namespace e4nu {
       KineY = q.e()/beampt->momentum().e() ; 
       KineW = sqrt( pow(M,2) + 2*M*q.e() - KineQ2 ) ; 
       
+      /*
       if( is_GENIE ) { 
 	// True event information
 	HitQrk=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.HitQuarkPDG");
@@ -408,7 +412,7 @@ namespace e4nu {
 	KineQ2=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.Q2");
 	KineW=NuHepMC::CheckedAttributeValue<int>(&evt, "GENIE.Interaction.W");
 
-	std::cout << KineQ2 - -q.m2()<<std::endl;
+	//	std::cout << KineQ2 - -q.m2()<<std::endl;
 	// Not implemented: 
 	VtxX = 0 ; 
 	VtxY = 0 ; 
@@ -417,7 +421,7 @@ namespace e4nu {
 	CalResp0 = 0 ; 
 	KPS = 0 ; 
       }
-      
+      */      
       Weight = evt.weights()[0]; // get event weight
  
       output_tree->Fill();
