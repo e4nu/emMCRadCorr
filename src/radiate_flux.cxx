@@ -60,9 +60,10 @@ int main( int argc, char* argv[] ) {
       MaxEPhoton = stod(utils::GetArg("max-Ephoton",argc,argv)); 
     }
   }
+  MaxEPhoton *= EBeam ;
   // Calculate number of bins given resolution
   if( resolution == 0 ) return 0 ; 
-  double Emin = EBeam - MaxEPhoton * EBeam - 0.02 ;
+  double Emin = EBeam - MaxEPhoton - 0.02 ;
   double Emax = EBeam+0.02 ;
   int nbins = (Emax - Emin)/resolution * 10 ; // Adding an extra factor 10 to stay safe on the binning side. 
 
@@ -70,10 +71,10 @@ int main( int argc, char* argv[] ) {
   TH1D * hradflux = new TH1D( "hradflux", "Radiated Flux", nbins, Emin, Emax) ;   
 
   HepMC3::FourVector V4_beam(0,0,EBeam,EBeam);
-  unsigned int nentries = 100000; 
+  unsigned int nentries = 500000; 
   for( unsigned int i = 0 ; i < nentries ; ++i ) { 
     double egamma = SIMCEnergyLoss( V4_beam, tgt, thickness, MaxEPhoton, resolution ) ;
-    if( egamma < 0 || egamma < resolution ) egamma = 0 ;
+    if( egamma < 0 ) egamma = 0 ;
     double Ee = EBeam - egamma ;
     hradflux -> Fill( Ee ) ; 
   }
