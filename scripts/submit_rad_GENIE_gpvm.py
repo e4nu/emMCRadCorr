@@ -160,6 +160,7 @@ command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opt
 command_list = command_dict[4]
 command_list_next = command_list
 in_serial = False 
+in_parallel = False
 if len(command_list) == 1 : # serial
     if in_serial == False: 
         grid.write("<serial>\n")
@@ -170,10 +171,14 @@ if len(command_list) == 1 : # serial
         if ( in_serial == True ) : 
             grid.write("</serial>\n")
             in_serial = False
-    else : 
-        grid.write("<parallel>\n")
-        for i in range(len(command_list)) : 
+else : 
+      if in_parallel == False:
+            grid.write("<parallel>\n")
+            in_parallel = True
+      
+      for i in range(len(command_list)) : 
             grid.write(command_list[i]+"\n")
+      if in_parallel == True : 
             grid.write("</parallel>\n")
 
 # 3 - Process files
