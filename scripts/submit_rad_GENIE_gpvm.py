@@ -19,9 +19,8 @@ else :
 import eFluxScatteringGenCommands as eAFlux
 
 op = optparse.OptionParser(usage=__doc__)
-op.add_option("--git-tarball-location", dest="GIT_TAR", help="Built emMCRadCorr tarball code location. If it is a directory it compresses it.")
 op.add_option("--git-location", dest="GIT_LOCATION", default="https://github.com/e4nu/emMCRadCorr.git", help="emMCRadCorr code location in github. Defaulted to %default")
-op.add_option("--git-branch", dest="BRANCH", default="master", help="Branch name. Default: %default")
+op.add_option("--git-branch", dest="BRANCH", default="main", help="Branch name. Default: %default")
 op.add_option("--gpvm-group", dest="GROUP", default="genie", help="Group in the gpvm assigned to your user")
 op.add_option("--directory", dest="JOBSTD", default=os.getenv('PWD'), help="Output directory (default: %default)")
 op.add_option("--ebeam-energy", dest="EnergyBeam", default=2, help="Beam energy, Default: %default")
@@ -35,7 +34,7 @@ op.add_option("--input-radflux", dest="INFLUX", default="",help="Name of INPUT R
 op.add_option("--genie-topdir", dest="GENIE", default=os.getenv('GENIE'), help = "GENIE topdir: %default")
 op.add_option("--genie-version", dest="VERSION", default="master", help="Genie version. Default: %default")
 op.add_option("--genie-git-location", dest="GENIE_GIT_LOCATION", default="https://github.com/GENIE-MC/Generator", help="Github location from where to get the GENIE Generator code. Defaulted to %default")
-op.add_option("--genie-git-branch", dest="BRANCH", default="master", help="Genie version branch name. Default: %default")
+op.add_option("--genie-git-branch", dest="GENIE_BRANCH", default="master", help="Genie version branch name. Default: %default")
 op.add_option("--cycle", dest="CYCLE", default="01", help="Cycle (default: %default)")
 op.add_option("--arch", dest="ARCH", default='SL6.x86_64', help="arch number, default: %default")
 op.add_option("--production", dest="PROD", default="routine_validation", help="Production (default: %default)")
@@ -61,26 +60,6 @@ os.system("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup"
 
 if opts.BRANCH: 
     print( ' Cloning emMCRadCorr ' + opts.BRANCH ) 
-
-# Create tar ball
-emCode_path = ""
-if os.path.isdir(opts.GIT_TAR) : 
-    print("compressing directory...\n")
-    if os.path.exists(opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2") :
-        os.remove(opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2")
-
-    emCode_path = os.path.split(opts.GIT_TAR)[0]
-    # Create tar ball 
-    os.system("tar -cjf "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+opts.GIT_TAR)
-    print ( " Compressed the directory successfully")
-
-else : 
-    # check if tar ball exists - if not exit code
-    if os.path.exists(opts.GIT_TAR) :
-        print (" using "+opts.GIT_TAR+"for production")
-    else : 
-        print ( " Exit - user did not indicate location of tarball" )
-        exit()
 
 # Configure grid
 EMRADCORRCODE=os.getenv('EMMCRADCORR')
@@ -108,18 +87,18 @@ if opts.INFLUX=="" :
     script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
     script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
-    script.write("cd $INPUT_TAR_DIR_LOCAL; bzip2 -dk "+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+";tar -x "+(os.path.split(opts.GIT_TAR)[1]).strip("bz2")+".tar ;\n")
-    script.write("cd $INPUT_TAR_DIR_LOCAL/"+emCode_path+"/emMCRadCorr/ ;\n")
-    script.write("source emMCRadCorr_gpvm_env.sh ;\n")
+    script.write("cd $CONDOR_DIR_INPUT ; \n")
+    script.write("git clone "+opts.GIT_LOCATION+" -b "+opts.BRANCH+" ;\n")
+    script.write("cd emMCRadCorr ; mkdir build; source emMCRadCorr_gpvm_env.sh ; cd build; cmake ..; make ;\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib):${LD_LIBRARY_PATH};\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib64):${LD_LIBRARY_PATH};\n")
-    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; cd build;\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; \n")
 
     #write main command
     script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 file://"+opts.JOBSTD+"/rad_flux.sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
     grid.write("</serial>\n")
 
 # 2 - Run GENIE jobs on grid
@@ -155,7 +134,7 @@ command_dict.update( eAFlux.eFluxScatteringGenCommands("11",str(opts.TARGET),opt
                                                        opts.Seed, opts.RunID, opts.GSTOutput, opts.NoGHEPOutput,opts.VERSION,
                                                        opts.CONF, opts.ARCH, opts.PROD, opts.CYCLE,"FNAL", opts.GROUP,os.getenv('GENIE_MASTER_DIR'),
                                                        opts.GENIE, opts.JOBSTD,opts.JOBSTD+"/setup_FNAL.sh",opts.JOBSTD+"/setup_GENIE.sh",
-                                                       message_thresholds,"4","4GB","4GB",opts.BRANCH,
+                                                       message_thresholds,"4","4GB","4GB",opts.GENIE_BRANCH,
                                                        opts.GENIE_GIT_LOCATION,configure_INCL,configure_G4,True))
 command_list = command_dict[4]
 command_list_next = command_list
@@ -217,19 +196,19 @@ for x in range(0,len(gst_file_names)):
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
     script.write("cd $CONDOR_DIR_INPUT ;\n")
     script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n") 
-    script.write("cd $INPUT_TAR_DIR_LOCAL; bzip2 -dk "+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 "+";tar -xf "+(os.path.split(opts.GIT_TAR)[1]).strip("bz2")+".tar ;\n")
-    script.write("cd $INPUT_TAR_DIR_LOCAL/"+emCode_path+"/emMCRadCorr/ ;\n")
-    script.write("source emMCRadCorr_gpvm_env.sh ;\n")
+    script.write("cd $CONDOR_DIR_INPUT ;\n")
+    script.write("git clone "+opts.GIT_LOCATION+" -b "+opts.BRANCH+" ;\n")
+    script.write("cd emMCRadCorr ; mkdir build; source emMCRadCorr_gpvm_env.sh ; cd build; cmake ..; make ;\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib):${LD_LIBRARY_PATH};\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib64):${LD_LIBRARY_PATH};\n")
-    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; cd build;\n")
+    script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; \n")
  
     #write main command
     script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+" --resolution "+str(opts.ERES)+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
-    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=4h -G "+opts.GROUP+" --tar-file-name "+opts.JOBSTD+"/"+os.path.split(opts.GIT_TAR)[1]+".tar.bz2 --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
+    grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --OS=SL7 --expected-lifetime=4h -G "+opts.GROUP+" --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh \n")
 
     counter += 1
 
