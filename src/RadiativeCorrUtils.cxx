@@ -132,8 +132,8 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
     double delta_vac = 2./3. * ( 5./3. - lnQm )  ;
     double delta_vertex = - 3./2. * lnQm + 2 + 0.5 * pow( lnQm, 2. ) + pow(kPi,2)/6. ; 
     double delta_soft = 0;//TMath::Log( beampt->momentum().e()*fslep->momentum().e()/ pow(Delta_E,2)) * ( lnQm - 1 ) ;
-    delta_soft += 0.5 * pow( TMath::Log( beampt->momentum().e()/fslep->momentum().e() ),2 ) ;
-    delta_soft -= 0.5 * pow( lnQm,2) - pow(kPi,2)/3. + TMath::DiLog(pow(TMath::Cos(fslep->momentum().theta())/2,2.));
+    //delta_soft += 0.5 * pow( TMath::Log( beampt->momentum().e()/fslep->momentum().e() ),2 ) ;
+    //delta_soft -= 0.5 * pow( lnQm,2) - pow(kPi,2)/3. + TMath::DiLog(pow(TMath::Cos(fslep->momentum().theta())/2,2.));
     delta = (kAem/kPi) * ( delta_vac + delta_vertex + delta_soft ) ; 
   } else if ( model == "motsai" ) {
     // 10.1103/RevModPhys.41.205
