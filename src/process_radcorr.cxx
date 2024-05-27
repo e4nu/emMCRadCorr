@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
     double vertex_Q2 = -q.m2();
 
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, resolution, model );
+    //    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, resolution, model );
 
     // Store back in hepmc3 format:
     wrtr->write_event(evt); 
