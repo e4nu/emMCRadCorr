@@ -2,16 +2,13 @@
 This is a package that can be used to add radiative corrections to any MC event generator. It is developed oriented to neutrino event generators running on electron-scattering mode. The package modifies the output of neutrino event generators in NuHEPMC format. It can also be used to modify GENIE gst files.
 
 Radiative corrections are included in a number of steps: 
-1. Pre-compute incoming electron radiation
-2.  Use radiated incoming electron energy spectra as input flux for your preferred event generator
-3.  Generate electron-scattering events on the target of interest
-4.  Modify the generator output to account for incoming and outgoing electron radiation
-5.  Use the event kinematics to compute the corresponding radiative cross-section weights
-<p align="center">
-  <img width="531" alt="image" src="[https://github.com/e4nu/emMCRadCorr/assets/36236227/3f2484e1-bcde-40a6-88c0-3393c7938e4e](https://github.com/user-attachments/files/16246315/diagram_emMCRadCorr_hadrons.pdf)">
-</p>
-
-
+1. Given an incident electron flux (typically mono-chromatic), compute the incoming electron radiation and the resulting modified incident electron flux,
+2. Generate electron-scattering events on the target and processes of interest using your preferred event generator,
+3. Store the events in NuHEPMC data format,
+4. Use the event kinematics to calculate the appropriate weight to account for vertex and vacuum-polarization corrections,
+5. Generate the real photon (if any) radiated by the scattered electron,
+6. Modify the NuHEPMC event record to include the incoming and outgoing electron radiation and the weight.
+   
 ## Build software
 In the FNAL farm, 
 ```
