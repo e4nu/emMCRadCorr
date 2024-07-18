@@ -148,8 +148,7 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
     double lnQm  = TMath::Log(true_Q2/pow(kElectronMass,2)) ;
     double delta_vac = 1./3./kPi * ( - 5./3. + lnQm )  ;
     double delta_hard = 2 * kAem * ( -3./4./kPi * lnQm + 1./kPi - delta_vac ) ; 
-    double delta_soft = kAem / kPi * TMath::Log( beampt->momentum().e()*fslep->momentum().e()/ pow(Delta_E,2))*( lnQm - 1 ); 
-    delta = delta_hard + delta_soft ; 
+    delta = delta_hard ;
   }
   weight = 1 - delta ; 
   
