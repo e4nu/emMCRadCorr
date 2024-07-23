@@ -96,6 +96,4 @@ if os.path.exists(rad_dir+"fnal_dag_submit.fnal"):
 
 fnal_script = open( rad_dir+"fnal_dag_submit.fnal", 'w' ) 
 fnal_script.write("#!/bin/bash \n")
-fnal_script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups ;\n")
-fnal_script.write("setup fife_utils ;\n")
-fnal_script.write("jobsub_submit -G genie --OS=SL7 --memory=10GB --disk=10GB --expected-lifetime=25h -N 1 --role=Analysis --dag file://"+rad_dir+"/grid_submission.xml;\n")
+fnal_script.write("jobsub_submit -G genie --memory=10GB --disk=10GB --expected-lifetime=25h -N 1 --role=Analysis --dag file://"+rad_dir+"/grid_submission.xml;\n")
