@@ -223,6 +223,4 @@ if os.path.exists(opts.JOBSTD+"/fnal_dag_submit.fnal"):
 
 fnal_script = open( opts.JOBSTD+"/fnal_dag_submit.fnal", 'w' ) 
 fnal_script.write("#!/bin/bash \n")
-fnal_script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups ;\n")
-fnal_script.write("setup fife_utils ;\n")
 fnal_script.write("jobsub_submit --memory=10GB --disk=10GB -G "+opts.GROUP+" --expected-lifetime=25h -N 1 --role=Analysis --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest --dag file://"+opts.JOBSTD+"/grid_submission.xml;\n")
