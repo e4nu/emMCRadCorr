@@ -84,6 +84,7 @@ if opts.INFLUX=="" :
 
     script = open( opts.JOBSTD+"/rad_flux.sh", 'w' ) 
     script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/genie/bootstrap_genie_ups.sh \n")
     script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
     script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
@@ -192,6 +193,7 @@ for x in range(0,len(gst_file_names)):
     script = open( rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh", 'w' ) 
 
     script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/genie/bootstrap_genie_ups.sh \n")
     script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
     script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")

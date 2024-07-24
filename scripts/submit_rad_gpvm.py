@@ -72,6 +72,7 @@ for x in gst_file_names:
     script = open( rad_dir+name_out_file+"_"+str(number)+".sh", 'w' ) 
 
     script.write("#!/bin/bash \n")
+    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/genie/bootstrap_genie_ups.sh \n")
     script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
     script.write("setup ifdhc v2_6_6 \n")
     script.write("export IFDH_CP_MAXRETRIES=0 \n")
