@@ -97,7 +97,7 @@ if opts.INFLUX=="" :
     script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; \n")
 
     #write main command
-    script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" \n")
+    script.write("./radiate_flux --output-file "+opts.OUTFLUX+" --target "+str(opts.TARGET)+" --ebeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --resolution "+str(opts.ERES)+" --thickness "+str(opts.THICKNESS)+" \n")
     script.write("ifdh cp -D "+opts.OUTFLUX+" "+opts.JOBSTD+" \n")
     grid.write("<serial>\n")
     grid.write("jobsub_submit  -n --memory=4GB --disk=4GB --expected-lifetime=3h -G "+opts.GROUP+" --mail_on_error --singularity-image /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest file://"+opts.JOBSTD+"/rad_flux.sh \n")
