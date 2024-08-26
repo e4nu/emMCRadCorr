@@ -1,5 +1,6 @@
 // Leave this at the top to enable features detected at build time in headers in
 // HepMC3
+#include <TH1D.h>
 #include "NuHepMC/HepMC3Features.hxx"
 #include "NuHepMC/EventUtils.hxx"
 #include "NuHepMC/ReaderUtils.hxx"
@@ -15,13 +16,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 // process_radcorr.cxx                                                       //
 // --input-hepmc3-file : input MC file in hepmc3 format                      //
+// --flux-file : input flux used for the generation of events                //
 // --output-file : output MC file name, without format type. Def:myradevents //
 // --true-EBeam : true experiment beam energy, monochromatic. Def: 2GeV      //
 // --target : target pdg, Def: 1000010010                                    //
 // --thickness : target thickness in target lenght                           //
 // --rad-model : radiation model, Def: vanderhaghen                          //
 // --max-egamma : max % of allowed energy loss relative to EBeam, Def: 0.2   //
-// --resolution : resolution of the photon energy, Def: 0.001                //
+// --Delta_Em : minimum photon energy for a hard photon                      //
+// --resolution : resolution of the photon energy, Def: 0.0001               //
 // --nevents : number of events to process. Def: all                         //
 //                                                                           //
 // Output: modified hepmc3 event record and ROOT gst file in GENIE format    //
@@ -33,17 +36,21 @@ using namespace utils;
 
 int main(int argc, char* argv[]) {
 
-  std::string input_hepmc3_file = "", model = "vanderhaghen";
+  std::string input_hepmc3_file = "", input_flux = "", model = "simc";
   std::string output_name = "myradevents";
   double true_EBeam = 2 ; 
   int target = 1000010010;
-  double thickness = 0, max_egamma = 0.2, resolution = 0.001 ;
+  double thickness = 0, max_egamma = 0.2, resolution = 0.0001 ;
   int nevents = -1 ; // all
+  double Delta_Em = 0.01;
   // process options
   if( argc > 1 ) { // configure rest of analysis
     if( utils::ExistArg("input-hepmc3-file",argc,argv)) {
       input_hepmc3_file = utils::GetArg("input-hepmc3-file",argc,argv); 
     } else { std::cout << " --input-hepmc3-file is not defined "; return 0 ;}
+    if( utils::ExistArg("flux-file",argc,argv)) {
+      input_flux = utils::GetArg("flux-file",argc,argv);
+    } else { std::cout << " --flux-file is not defined "; return 0 ;}
     if( utils::ExistArg("output-file",argc,argv)) {
       output_name = utils::GetArg("output-file",argc,argv); 
     }
@@ -69,6 +76,9 @@ int main(int argc, char* argv[]) {
     }
     if( utils::ExistArg("nevents",argc,argv)){
       nevents = std::stoi(utils::GetArg("nevents",argc,argv));
+    }
+    if( utils::ExistArg("Delta_Em",argc,argv)) {
+      Delta_Em = stod(utils::GetArg("Delta_Em",argc,argv)); 
     }
   }
   max_egamma *= true_EBeam;
@@ -114,6 +124,14 @@ int main(int argc, char* argv[]) {
 
   // re-open the file so that you start at the beginning
   rdr = HepMC3::deduce_reader(input_hepmc3_file);
+
+  // Before looping over the events, we need to calculate the integral of the p.d.f of the flux for the tail and
+  // the soft bremstrahlung correction
+  TFile * flux = TFile::Open(input_flux.c_str());
+  TH1D * hist_flux = (TH1D*)flux->Get("hradflux");
+  double integral_tail = hist_flux->Integral(hist_flux->FindBin(0),hist_flux->FindBin(true_EBeam-Delta_Em)) ;
+  double integral_peak = 1-integral_tail;
+  std::cout << " The tail integral is " << integral_tail << ". Integrated from (0,"<<true_EBeam-Delta_Em<<")."<<std::endl;
 
   size_t nprocessed = 0;
   while (true) { // loop while there are events
@@ -179,8 +197,7 @@ int main(int argc, char* argv[]) {
     out_photon->set_pid(kPdgPhoton);
 
     // Compute true detected outgoing electron kinematics with energy loss method
-    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, resolution ) ;
-    if( egamma < 0 || egamma < resolution ) egamma = 0 ;
+    double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, Delta_Em ) ;
     HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
     if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
     out_photon->set_momentum(OutGamma);
@@ -193,7 +210,7 @@ int main(int argc, char* argv[]) {
     
     lepISIvtx->add_particle_in(beampt_mono);
     lepISIvtx->add_particle_out(beampt_corr);
-    if( beam_photon->momentum().e() > resolution ) lepISIvtx->add_particle_out(beam_photon);
+    if( beam_photon->momentum().e() > Delta_Em ) lepISIvtx->add_particle_out(beam_photon);
  
     auto lepFSIvtx = std::make_shared<HepMC3::GenVertex>();
     lepFSIvtx->set_status(MyRadVertexStatus);
@@ -201,7 +218,7 @@ int main(int argc, char* argv[]) {
       
     lepFSIvtx->add_particle_in(fslep_corr);
     lepFSIvtx->add_particle_out(fslep_detected);
-    if( out_photon->momentum().e() > resolution ) lepFSIvtx->add_particle_out(out_photon);
+    if( out_photon->momentum().e() > Delta_Em ) lepFSIvtx->add_particle_out(out_photon);
 
     // For the weight calculation, we need the true Q2 used for event generation
     // We compute it with vertex kinematics
@@ -209,7 +226,7 @@ int main(int argc, char* argv[]) {
     double vertex_Q2 = -q.m2();
 
     // Alter event weigth to account for vertex and vacumm effects
-    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, resolution, model );
+    evt.weights()[0] = utils::RadCorrWeight( evt, vertex_Q2, thickness, max_egamma, Delta_Em, integral_peak, integral_tail, model );
 
     // Store back in hepmc3 format:
     wrtr->write_event(evt); 
