@@ -298,6 +298,10 @@ namespace e4nu {
 
       if(NuHepMC::GC1::SignalsConvention(evt.run_info(),"E.C.1")){
 	//the generator has promised that 300 <= process_id < 349 == IsCCRes and 350 <= process_id < 399 == IsNCRes
+	IsQel = false ; 
+	IsMec = false ; 
+	IsRes = false ; 
+	IsDis = false ;
 	auto process_id = NuHepMC::ER3::ReadProcessID(evt);
 	if( process_id >=200 && process_id <= 299 ) IsQel=true;
 	else if ( process_id >=300 &&process_id <= 399 ) IsMec=true;
