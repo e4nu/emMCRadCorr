@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
   NuHepMC::GR6::WriteParticleStatusIDDefinitions(out_gen_run_info, part_statuses);
   
   // add link to your paper describing this model to the citation metadata
-  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "arxiv", {"Not Yet Available",});
+  NuHepMC::GC6::AddGeneratorCitation(out_gen_run_info, "emMCRadCorr", {"https://doi.org/10.48550/arXiv.2409.05736",});
   
   auto wrtr = std::unique_ptr<HepMC3::Writer>(NuHepMC::Writer::make_writer((output_name+".hepmc3").c_str(), out_gen_run_info));
 
