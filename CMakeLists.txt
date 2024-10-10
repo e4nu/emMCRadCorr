@@ -31,7 +31,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 include(CPM)
 CPMAddPackage(
   NAME NuHepMC_CPPUtils
-  GIT_TAG main
+  GIT_TAG stable
   GIT_REPOSITORY "https://github.com/NuHepMC/cpputils.git"
   OPTIONS "NuHepMC_CPPUtils_BUILTIN_HEPMC3 ON"
   OPTIONS "HEPMC3_ENABLE_ROOTIO OFF"
