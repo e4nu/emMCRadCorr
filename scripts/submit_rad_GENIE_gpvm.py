@@ -192,10 +192,7 @@ for x in range(0,len(gst_file_names)):
     script = open( rad_dir+name_out_file+"_e_on_"+str(opts.TARGET)+"_"+str(x)+".sh", 'w' ) 
 
     script.write("#!/bin/bash \n")
-    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/genie/bootstrap_genie_ups.sh \n")
-    script.write("source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setups \n")
     script.write("setup ifdhc v2_6_6 \n")
-    script.write("setup root v6_22_08d -q debug:e20:p392 \n\n")
     script.write("export IFDH_CP_MAXRETRIES=0 ;\n")
     script.write("cd $CONDOR_DIR_INPUT ;\n")
     script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n") 
