@@ -17,7 +17,7 @@ echo "Setting emMCRadCorr environment variables..."
 echo "GCC Version :"
 echo $GCC_VERSION
 echo "ROOT Version :"
-echo $$ROOT_VERSION
+echo $ROOT_VERSION
 
 # Finds the directory where this script is located. This method isn't
 # foolproof. See https://stackoverflow.com/a/246128/4081973 if you need
