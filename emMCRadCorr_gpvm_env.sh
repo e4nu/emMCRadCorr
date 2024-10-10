@@ -13,6 +13,12 @@ setup gdb v8_1
 
 echo "Setting emMCRadCorr environment variables..."
 
+# Print out enviroment for debugging
+echo "GCC Version :"
+echo $GCC_VERSION
+echo "ROOT Version :"
+echo $$ROOT_VERSION
+
 # Finds the directory where this script is located. This method isn't
 # foolproof. See https://stackoverflow.com/a/246128/4081973 if you need
 # something more robust for edge cases (e.g., you're calling the script using
