@@ -85,20 +85,6 @@ int main(int argc, char* argv[]) {
 
   std::cout << " Configured for " << true_EBeam << " GeV beam, " << target << " target, " << thickness << " of thickness"<<std::endl;
 
-  auto rdr = HepMC3::deduce_reader(input_hepmc3_file);
-  if (!rdr) {
-    std::cout << "Failed to instantiate HepMC3::Reader from " << input_hepmc3_file << std::endl;
-    return 1;
-  }
-
-  HepMC3::GenEvent evt;
-  rdr->read_event(evt);
-  if (rdr->failed()) {
-    std::cout << "Failed to read first event from " << argv[1] << "."
-              << std::endl;
-    return 1;
-  }
-
   // Before looping over the events, we need to calculate the integral of the p.d.f of the flux for the tail and
   // the soft bremstrahlung correction
   TFile * flux = TFile::Open(input_flux.c_str());
@@ -113,6 +99,20 @@ int main(int argc, char* argv[]) {
   TFile * output_gst = new TFile((output_name+".gst.root").c_str(),"RECREATE");
   TTree * output_tree = new TTree("gst","GENIE Summary Event Tree");
   SetGSTBranchAddress( output_tree );
+
+  auto rdr = HepMC3::deduce_reader(input_hepmc3_file);
+  if (!rdr) {
+    std::cout << "Failed to instantiate HepMC3::Reader from " << input_hepmc3_file << std::endl;
+    return 1;
+  }
+
+  HepMC3::GenEvent evt;
+  rdr->read_event(evt);
+  if (rdr->failed()) {
+    std::cout << "Failed to read first event from " << input_hepmc3_file << "."
+              << std::endl;
+    return 1;
+  }
 
   auto in_gen_run_info = evt.run_info();
   auto vtx_statuses = NuHepMC::GR5::ReadVertexStatusIdDefinitions(in_gen_run_info);
@@ -135,6 +135,10 @@ int main(int argc, char* argv[]) {
 
   // re-open the file so that you start at the beginning
   rdr = HepMC3::deduce_reader(input_hepmc3_file);
+  if (!rdr) {
+    std::cout << "Failed to instantiate HepMC3::Reader from " << input_hepmc3_file << std::endl;
+    return 1;
+  }
 
   size_t nprocessed = 0;
   while (true) { // loop while there are events
