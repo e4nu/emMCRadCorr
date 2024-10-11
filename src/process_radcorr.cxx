@@ -98,6 +98,17 @@ int main(int argc, char* argv[]) {
               << std::endl;
     return 1;
   }
+
+  // Before looping over the events, we need to calculate the integral of the p.d.f of the flux for the tail and
+  // the soft bremstrahlung correction
+  TFile * flux = TFile::Open(input_flux.c_str());
+  TH1D * hist_flux = (TH1D*)flux->Get("hradflux");
+  double integral_tail = hist_flux->Integral(hist_flux->FindBin(0),hist_flux->FindBin(true_EBeam-Delta_Em)) ;
+  double integral_peak = 1-integral_tail;
+  std::cout << " The tail integral is " << integral_tail << ". Integrated from (0,"<<true_EBeam-Delta_Em<<")."<<std::endl;
+
+  flux->Close();
+  delete flux; 
   
   TFile * output_gst = new TFile((output_name+".gst.root").c_str(),"RECREATE");
   TTree * output_tree = new TTree("gst","GENIE Summary Event Tree");
@@ -124,14 +135,6 @@ int main(int argc, char* argv[]) {
 
   // re-open the file so that you start at the beginning
   rdr = HepMC3::deduce_reader(input_hepmc3_file);
-
-  // Before looping over the events, we need to calculate the integral of the p.d.f of the flux for the tail and
-  // the soft bremstrahlung correction
-  TFile * flux = TFile::Open(input_flux.c_str());
-  TH1D * hist_flux = (TH1D*)flux->Get("hradflux");
-  double integral_tail = hist_flux->Integral(hist_flux->FindBin(0),hist_flux->FindBin(true_EBeam-Delta_Em)) ;
-  double integral_peak = 1-integral_tail;
-  std::cout << " The tail integral is " << integral_tail << ". Integrated from (0,"<<true_EBeam-Delta_Em<<")."<<std::endl;
 
   size_t nprocessed = 0;
   while (true) { // loop while there are events
@@ -236,6 +239,7 @@ int main(int argc, char* argv[]) {
     ++nprocessed;
     if( nevents > 0 && nprocessed > nevents ) break;
   }
+
   wrtr->close();
   output_tree->Write();
   output_gst->Close();
