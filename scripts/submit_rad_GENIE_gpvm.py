@@ -28,7 +28,7 @@ op.add_option("--model", dest="MODEL", default="simc", help="Rad corr model to u
 op.add_option("--target", dest="TARGET", default=1000010010, help="Target used for calculation. Default %default")
 op.add_option("--thickness", dest="THICKNESS", default="0", help="Thickness. Specify for your experiment")
 op.add_option("--MaxEGamma", dest="MaxEGamma", default=0.2,help="Maximum energy for the emited photons. Default %default*EnergyBeam")
-op.add_option("--Delta_Em", dest="Delta_Em", default=0.01,help="Photon resolution in the detector. Hard photon energy threshold. Default %default*EnergyBeam")
+op.add_option("--Delta_Em", dest="Delta_Em", default=0.01,help="Photon resolution in the detector. Hard photon energy threshold. Default %default")
 op.add_option("--eResolution", dest="ERES", default=0.001,help="Experimental electron energy resolution. Default %default")
 op.add_option("--output-radflux", dest="OUTFLUX", default="rad_flux.root",help="Name of output ROOT file containing decayed electron flux. Default %default")
 op.add_option("--input-radflux", dest="INFLUX", default="",help="Name of INPUT ROOT file containing decayed electron flux. OPTIONAL argument")
