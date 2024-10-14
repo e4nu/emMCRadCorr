@@ -198,10 +198,11 @@ for x in range(0,len(gst_file_names)):
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib):${LD_LIBRARY_PATH};\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f tools/build/Linux/lib64):${LD_LIBRARY_PATH};\n")
     script.write("export LD_LIBRARY_PATH=$(readlink -f build/_deps/hepmc3-build/outputs/lib64):${LD_LIBRARY_PATH}; \n")
-    script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n") 
+    script.write("ifdh cp -D "+opts.JOBSTD+"/master-routine_validation_01-eScattering/"+gst_file_names[x]+" $CONDOR_DIR_INPUT/ ;\n \n")
+    script.write("ifdh cp -D "+opts.JOBSTD+"/"+opts.OUTFLUX+" $CONDOR_DIR_INPUT/ ;\n \n") 
  
     #write main command
-    script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+" --resolution "+str(opts.ERES)+" --Delta_Em "+ str(opts.Delta_Em)+" --flux-file "+opts.OUTFLUX+"; \n\n")
+    script.write("./process_radcorr --input-hepmc3-file $CONDOR_DIR_INPUT/"+gst_file_names[x]+" --output-file $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+" --true-EBeam "+str(opts.EnergyBeam)+" --rad-model "+opts.MODEL+" --thickness "+str(opts.THICKNESS)+" --max-egamma "+str(opts.MaxEGamma)+" --resolution "+str(opts.ERES)+" --Delta_Em "+ str(opts.Delta_Em)+" --flux-file $CONDOR_DIR_INPUT/"+opts.OUTFLUX+"; \n\n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".gst.root "+rad_dir+" \n")
     script.write("ifdh cp -D $CONDOR_DIR_INPUT/rad_corr_e_on_"+str(opts.TARGET)+"_"+str(x)+".hepmc3 "+rad_dir+" \n")
 
