@@ -71,7 +71,9 @@ double utils::SIMCBFactor( const double tgt_pdg ) {
 
 double utils::GetLambda( const HepMC3::FourVector particle ) { 
   double lambda = TMath::Log(4*pow(particle.p3mod(),2)/pow(kElectronMass,2)) - 1 ;
-  if( particle.pz() != particle.e() ) lambda += TMath::Log(0.5*(1-cos(particle.theta()))) ;
+  // The factor two is applied to account for the total radiative strenght for lambda 2, according to https://journals.aps.org/prc/pdf/10.1103/PhysRevC.64.054610
+  // Eq 61
+  if( particle.pz() != particle.e() ) lambda += 2 * TMath::Log(0.5*(1-cos(particle.theta()))) ;
   lambda *= (kAem/kPi) ;
   if( lambda < 0 ) return 0;
   return lambda ; 
