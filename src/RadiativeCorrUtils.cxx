@@ -117,7 +117,7 @@ double utils::VacuumPolarization( const double mass, const double Q2 ){
   double u = GetUFactor( mass, Q2 ) ;
   double su = sqrt( 1 + u ) ;
   double pigg = (( 1 - u * 0.5 ) * su * TMath::Log( (su + 1)/(su - 1)) + u - 5./3.)/3.;
-  pigg *= kapi;
+  pigg *= kAem ;
   return pigg; 
 }
 

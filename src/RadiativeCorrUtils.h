@@ -19,7 +19,6 @@ namespace e4nu {
     static const double ka2 = 1.1115;
     static const double km1 = 0.209026;
     static const double km2 = 1.70554;
-    static const double kapi = kAem/kPi ;
 
     // General functions
     unsigned int GetTargetNProtons( const unsigned int target_pdg ) ;
