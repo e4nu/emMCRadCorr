@@ -103,6 +103,24 @@ double utils::SIMCEnergyLoss(const HepMC3::FourVector particle, const double tgt
   return energyLoss ; 
 }
 
+double utils::GetUFactor( const double mass, const double Q2 ){
+  // computing u factor used for vacuum polarization calculation
+  if ( Q2 == 0 ) return 0 ;
+  return 4 * pow( mass, 2 ) / Q2 ;
+}
+
+double utils::VacuumPolarization( const double mass, const double Q2 ){
+  // From Phys. Rev. C, 64:054610, Eq 28
+  // In the limit Q2 >> m2, the vacumm polarization becomes: 
+  //double delta_vac = 1./3. * ( - 5./3. + lnQm )  ;
+  
+  double u = GetUFactor( mass, Q2 ) ;
+  double su = sqrt( 1 + u ) ;
+  double pigg = (( 1 - u * 0.5 ) * su * TMath::Log( (su + 1)/(su - 1)) + u - 5./3.)/3.;
+  pigg *= kAem ;
+  return pigg; 
+}
+
 double utils::VanderhagenELoss( const double Q2 , const double Ee, const double resolution ) {
   // http://dx.doi.org/10.1103/PhysRevC.62.025501
   // Depends on event kinematics - not used
@@ -176,7 +194,20 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
     // Cross section correction when Egamma < Delta_E
     // Compute delta_hard:
     double lnQm  = TMath::Log(true_Q2/pow(kElectronMass,2)) ;
-    double delta_vac = 1./3. * ( - 5./3. + lnQm )  ;
+
+    // The contribution to the vacumm polarization from electron pairs is dominant. 
+    // However, muon and hadronic pairs can contribute to a similar order for high Q2. 
+    // We include the electron and muon polarization using the prenscription from Phys. Rev. C, 64:054610
+    // The hadronic polarization is given by the Jegerlehner parameterization
+    // use fit from the dispersion analysis of Jegerlehner (on-shell scheme).
+    // Expression for polarization function for QED taken from Eq. (3.18) of Maximon & Tjon, PRC 62, 054320 (2000).
+    double dvp_e   = VacuumPolarization( kElectronMass, true_Q2 ) ;
+    double dvp_mu  = VacuumPolarization( kMuonMass, true_Q2 ) ;
+    double dvp_tau = VacuumPolarization( kTauMass, true_Q2 ) ;
+    double dvp_m1  = VacuumPolarization( km1, true_Q2 ) ;
+    double dvp_m2  = VacuumPolarization( km2, true_Q2 ) ;
+    double dvp_hadron = ka1 * dvp_m1 + ka2 * dvp_m2 ;
+    double delta_vac = dvp_e + dvp_mu + dvp_tau + dvp_hadron ; 
     double delta_hard = 2 * kAem * ( -3./4. * lnQm + 1. - delta_vac ) /kPi ; 
 
     // Compute delta_soft(Delta_E) 
