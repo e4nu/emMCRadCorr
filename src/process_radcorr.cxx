@@ -21,7 +21,7 @@
 // --true-EBeam : true experiment beam energy, monochromatic. Def: 2GeV      //
 // --target : target pdg, Def: 1000010010                                    //
 // --thickness : target thickness in target lenght                           //
-// --rad-model : radiation model, Def: vanderhaghen                          //
+// --rad-model : radiation model, Def: simc                                  //
 // --max-egamma : max % of allowed energy loss relative to EBeam, Def: 0.2   //
 // --Delta_Em : minimum photon energy for a hard photon                      //
 // --resolution : resolution of the photon energy, Def: 0.0001               //
