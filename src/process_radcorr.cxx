@@ -206,13 +206,15 @@ int main(int argc, char* argv[]) {
     // Compute true detected outgoing electron kinematics with energy loss method
     double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, Delta_Em ) ;
     HepMC3::FourVector OutGamma = -999;
-    while ( fslep_corr->momentum() - OutGamma <= 0 ) { 
+    double final_mom = -999;
+    while ( final_mom <= 0 ) { 
       // I observed that in some cases the final momenum is negative. To avoid this, we set a lower limit
       OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
       if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
+      final_mom = fslep_corr->momentum() - OutGamma;
     }
     out_photon->set_momentum(OutGamma);
-    fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
+    fslep_detected->set_momentum( final_mom ) ;
     
     // Add all particles to event record only if photon emited
     auto lepISIvtx = std::make_shared<HepMC3::GenVertex>();
