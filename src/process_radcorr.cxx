@@ -207,10 +207,9 @@ int main(int argc, char* argv[]) {
     double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, Delta_Em ) ;
     HepMC3::FourVector OutGamma = -999;
     double final_mom = -999;
-    while ( final_mom <= 0 ) { 
+    while ( final_mom <= 0 || OutGamma.e() < 0 ) { 
       // I observed that in some cases the final momenum is negative. To avoid this, we set a lower limit
       OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
-      if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
       final_mom = fslep_corr->momentum() - OutGamma;
     }
     out_photon->set_momentum(OutGamma);
