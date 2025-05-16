@@ -205,8 +205,12 @@ int main(int argc, char* argv[]) {
 
     // Compute true detected outgoing electron kinematics with energy loss method
     double egamma = utils::SIMCEnergyLoss( fslep_corr->momentum(), tgtpt->pid(), thickness, max_egamma, Delta_Em ) ;
-    HepMC3::FourVector OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
-    if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
+    HepMC3::FourVector OutGamma = -999;
+    while ( fslep_corr->momentum() - OutGamma <= 0 ) { 
+      // I observed that in some cases the final momenum is negative. To avoid this, we set a lower limit
+      OutGamma = utils::GetEmittedHardPhoton( fslep_corr->momentum(), egamma ) ;
+      if( OutGamma.e() < 0 ) OutGamma.set(0,0,0,0);
+    }
     out_photon->set_momentum(OutGamma);
     fslep_detected->set_momentum( fslep_corr->momentum() - OutGamma ) ;
     
