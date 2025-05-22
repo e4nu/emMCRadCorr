@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Directory containing the ROOT files
-input_dir="/pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation/FinalSPSPiAnalysis/Rarita/Carbon/4GeV/"
-output_dir="/pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation/FinalSPSPiAnalysis/Rarita/Carbon/4GeV/Grouped/"
+input_dir="/pnfs/genie/persistent/users/jtenavid/NewSample/Rad/radcorr/"
+output_dir="/pnfs/genie/persistent/users/jtenavid/e4nu_files/GENIE_Files/2024Generation/FinalSPSPiAnalysis/Rarita/Carbon/Radiated/4GeV/"
 num_chunks=10  # Number of merged output files
 
 # Create the output directory if it doesn't exist

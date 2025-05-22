@@ -4,8 +4,8 @@
  * It computes the correction factors to the cross section due to vertex, vacum or radiative effects
  * The methods used depend on the exclusive final state measured
  * References are provided for each case
- * \author Julia Tena Vidal \at Tel Aviv University                                                                                                                                                                 
- * \date Nov 2023                                                                                                                                                                                              
+ * \author Julia Tena Vidal \at Tel Aviv University                                                          
+ * \date Nov 2023                                                                                                                   
  **/
 #include <iostream>
 #include <TF1.h>
@@ -27,12 +27,13 @@ using namespace e4nu;
 unsigned int utils::GetTargetNProtons( const unsigned int target_pdg ) {
 
   static const unsigned int kPdgH   = 1000010010; 
+  static const unsigned int kPdgD   = 1000010020; 
   static const unsigned int kPdgHe3 = 1000020030; 
   static const unsigned int kPdgHe4 = 1000020040; 
   static const unsigned int kPdgC12 = 1000060120 ; 
   static const unsigned int kPdgFe56 = 1000260560 ;
 
-  if ( target_pdg == kPdgH || target_pdg == 2212 ) return 1 ;
+  if ( target_pdg == kPdgH || target_pdg == 2212 || target_pdg == kPdgD ) return 1 ;
   else if ( target_pdg == kPdgHe3 || target_pdg == kPdgHe4 ) return 2 ; 
   else if ( target_pdg == kPdgC12 ) return 6 ; 
   else if ( target_pdg == kPdgFe56) return 26 ; 
@@ -225,6 +226,7 @@ double utils::RadCorrWeight( const HepMC3::GenEvent & evt, const double true_Q2,
     double g_i = GetLambda( beampt->momentum() );
     double g_f = GetLambda( fslep->momentum() ) ;
     double phi_i = 1 ;
+
     if( beampt->momentum().p3mod() != 0 ) phi_i -= b * thickness * gamma_i.e() / beampt->momentum().p3mod() / g_i ; 
     double phi_f = 1 ;
     if( fslep->momentum().p3mod() != 0 ) phi_f -= b * thickness * gamma_f.e() / fslep->momentum().p3mod() / g_f ;
